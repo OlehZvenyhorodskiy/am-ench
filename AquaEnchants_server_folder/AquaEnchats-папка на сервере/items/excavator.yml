@@ -1,0 +1,54 @@
+# Конфиг нового предмета-экскаватора для команды /aquaenchant giveitem excavator
+# Вы можете менять материал, название, лор и настройки голограммы.
+
+id: excavator
+
+# Материал блока, который ставится в чанке
+material: COPPER_BULB
+
+# Отображаемое название предмета
+name: '&6ЭКСКАВАТОР'
+
+# Лор предмета
+lore:
+  - '&7Установи в том чанке, который хочешь раскопать'
+  - '&7При установке очищает весь чанк, если не пересекается'
+  - '&7с чужими регионами.'
+
+# Дополнительные настройки экскаватора
+excavator:
+  # Стартовое количество топлива, которое отображается в голограмме
+  start-fuel: 0
+  # Формат текста голограммы. %fuel% будет заменён на число топлива.
+  hologрам-text: '&eТопливо: &f%fuel%'
+
+# Здесь при желании можно указать зачарования из enachants.yml,
+# чтобы предмет имел красивое свечение:
+#enchants:
+#  some_enchant_id: 1
+
+whitelist:
+  - COAL_ORE
+  - DEEPSLATE_COAL_ORE
+  - IRON_ORE
+  - DEEPSLATE_IRON_ORE
+  - COPPER_ORE
+  - DEEPSLATE_COPPER_ORE
+  - GOLD_ORE
+  - DEEPSLATE_GOLD_ORE
+  - REDSTONE_ORE
+  - DEEPSLATE_REDSTONE_ORE
+  - EMERALD_ORE
+  - DEEPSLATE_EMERALD_ORE
+  - LAPIS_ORE
+  - DEEPSLATE_LAPIS_ORE
+  - DIAMOND_ORE
+  - DEEPSLATE_DIAMOND_ORE
+  - NETHER_GOLD_ORE
+  - NETHER_QUARTZ_ORE
+  - ANCIENT_DEBRIS
+
+darklist:
+  - BEDROCK
+  - SPAWNER
+  - COPPER_BULB

@@ -1,0 +1,87 @@
+# AquaEnchats основной конфиг.
+# Здесь задаются группы, порядок отображения и глобальные настройки.
+
+# Порядок групп зачарований (сверху вниз).
+# В самом верху уникальные, затем легендарные и внизу дефолтные.
+group:
+  - UNIKAL
+  - LEGENDA
+  - defoult
+
+# Список доступных типов эффектов зачарований.
+effectenchant:
+  - MANEVR
+  - ICE
+  - PALIROL
+  - BREAK
+  - INDIKATOR
+  - SMELT  # шанс переплавки блоков при добыче (руды -> слитки, булыжник -> камень и т.д.)
+  - LAVA   # лавовые партиклы при переплавке блока
+  - BREAK_BLOCK #ломает 3 на 3
+  - TP_DROPS #перемещает добытый блок в инвентарь
+  - BREAK_TREE #ломает дерево целиком
+  - DO_HARM # эффект вреда
+  - BLOOD # кровотечение
+  - POTION # отравление
+  - WAIT # ожидание
+  - EXP # опыт
+  - LIGHTNING #молния
+  - DEFENSE # защита от молний
+  - PULL_CLOSER # притяжение
+  - POTION:BLINDNESS
+  - PARTICLE:SONIC_BOOM
+  - EXTINGUISH
+  - DECREASE_DAMAGE
+  - WATER_WALKER
+  - LAVA_WALKER
+  - INCREASE_DAMAGE
+  - PLANT
+  - REPAIR
+  - DROP_HEAD
+  - LIPUCHKA
+  - SHIELD
+
+# Здесь можно добавить глобальные настройки, если понадобится.
+settings:
+  debug: true
+
+# Настройки системы снятия зачарований (/separation)
+separation:
+  # Валюта и стоимость операции
+  currency:
+    material: ECHO_SHARD
+    amount: 15
+  # Заголовки GUI
+  gui:
+    input_title: "&6Снятие зачарования"
+    select_title: "&6Выбор зачарования"
+
+firstenchant:
+  - MANEVR
+  - ICE
+  - PALIROL
+  - BREAK
+  - INDIKATOR
+  - PLANT
+  - BREAK_BLOCK
+  - INCREASE_DAMAGE
+  - BREAK_TREE
+  - EXP
+  - SMELT
+  - TP_DROPS
+  - DO_HARM
+  - BLOOD
+  - POTION
+  - LIGHTNING
+  - DEFENSE
+  - PULL_CLOSER
+  - POTION:BLINDNESS
+  - PARTICLE:SONIC_BOOM
+  - EXTINGUISH
+  - DECREASE_DAMAGE
+  - WATER_WALKER
+  - LAVA_WALKER
+  - REPAIR
+  - DROP_HEAD
+  - LIPUCHKA
+  - SHIELD

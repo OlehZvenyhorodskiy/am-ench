@@ -1,0 +1,25 @@
+name: AquaEnchats
+main: me.aquaenchants.AquaEnchatsPlugin
+version: 1.0.0
+api-version: '1.21'
+author: ChatGPT
+website: https://example.com
+commands:
+  repair:
+    description: Repair item in hand or all
+    usage: /repair [all]
+    permission: aquaenchants.repair
+  aquaenchant:
+    description: Main command for AquaEnchats
+    usage: /<command> give <enchant> <amount> <level> [player] | /<command> giveitem <itemId> <player> <amount>
+    permission: aquaenchant.admin
+    aliases: [aquaenchants]
+  separation:
+    description: Снятие зачарований с предмета
+    usage: /<command>
+permissions:
+  aquaenchants.repair:
+    default: op
+  aquaenchant.admin:
+    description: Allows use of all AquaEnchats admin commands
+    default: op

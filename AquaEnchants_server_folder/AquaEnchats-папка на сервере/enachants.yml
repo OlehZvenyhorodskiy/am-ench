@@ -1,0 +1,1080 @@
+manevr:
+  display: §x§0§C§9§4§F§BМ§x§0§C§9§D§F§3А§x§0§C§A§6§E§BН§x§0§D§A§F§E§3Е§x§0§D§B§8§D§BВ§x§0§D§C§1§D§3Р§x§0§D§C§A§C§CЕ§x§0§D§D§2§C§4Н§x§0§D§D§B§B§CН§x§0§E§E§4§B§4О§x§0§E§E§D§A§CС§x§0§E§F§6§A§4Т§x§0§E§F§F§9§CЬ
+  description: '&6шанс , что урон не пройдет'
+  applies-to: Armor
+  type: DEFENSE, DEFENSE_MOB
+  group: UNIKAL
+  applies:
+  - ALL_CHESTPLATE
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  levels:
+    '1':
+      effects:
+      - MANEVR: 10%
+    '2':
+      effects:
+      - MANEVR: 20%
+    '3':
+      effects:
+      - MANEVR: 30%
+lipuchka:
+  display: §x§8§1§F§B§0§CЛ§x§6§E§F§7§3§5И§x§5§B§F§2§5§DП§x§4§8§E§E§8§6У§x§3§4§E§9§A§EЧ§x§2§1§E§5§D§7К§x§0§E§E§0§F§FА
+  description: '&6шанс , лут с мобов прямо в инвентарь'
+  applies-to: Swords, Axes, Trident
+  type: KILL_PLAYER, KILL_MOB
+  group: UNIKAL
+  applies:
+  - ALL_SWORD
+  - ALL_AXE
+  - TRIDENT
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  levels:
+    '1':
+      effects:
+      - LIPUCHKA: 20%
+    '2':
+      effects:
+      - LIPUCHKA: 40%
+    '3':
+      effects:
+      - LIPUCHKA: 60%
+    '4':
+      effects:
+      - LIPUCHKA: 80%
+    '5':
+      effects:
+      - LIPUCHKA: 100%
+inquisitive:
+  display: §x§F§F§4§0§0§DД§x§F§F§4§4§1§3О§x§F§F§4§8§1§9Б§x§F§F§4§C§2§0Ы§x§F§F§5§0§2§6Т§x§F§F§5§4§2§CЧ§x§F§F§5§8§3§2И§x§F§F§5§C§3§8К §x§F§F§6§0§3§EО§x§F§F§6§4§4§5П§x§F§F§6§8§4§BЫ§x§F§F§6§C§5§1Т§x§F§F§7§0§5§7А
+  description: '&6Шанс увеличить количество опыта, получаемого от мобов'
+  applies-to: Swords
+  type: KILL_MOB
+  group: LEGENDA
+  applies:
+  - ALL_SWORD
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  levels:
+    '1':
+      chance: 30
+      cooldown: 4
+      effects:
+      - EXP:<math>%exp% * (1.0 + 0.25 * %level%)</math> @Victim
+    '2':
+      chance: 35
+      cooldown: 4
+      effects:
+      - EXP:<math>%exp% * (1.0 + 0.25 * %level%)</math> @Victim
+    '3':
+      chance: 40
+      cooldown: 4
+      effects:
+      - EXP:<math>%exp% * (1.0 + 0.25 * %level%)</math> @Victim
+    '4':
+      chance: 45
+      cooldown: 4
+      effects:
+      - EXP:<math>%exp% * (1.0 + 0.25 * %level%)</math> @Victim
+experience:
+  display: §x§9§2§F§F§1§7О§x§8§0§F§F§2§FП§x§6§F§F§F§4§7Ы§x§5§D§F§F§5§FТ §x§4§C§F§F§7§8С §x§3§A§F§F§9§0Р§x§2§9§F§F§A§8У§x§1§7§F§F§C§0Д
+  description: '&6Шанс получить больше опыта с руд'
+  applies-to: Tools
+  type: MINING
+  group: LEGENDA
+  applies:
+  - ALL_PICKAXE
+  enchanttable: true
+  chans: 1
+  levels:
+    '1':
+      chance: 15
+      cooldown: 1
+      effects:
+      - EXP: (1,2*%block type%) @Block
+    '2':
+      chance: 30
+      cooldown: 2
+      effects:
+      - EXP: (1,4*%block type%) @Block
+    '3':
+      chance: 45
+      cooldown: 3
+      effects:
+      - EXP: (1,6*%block type%) @Block
+    '4':
+      chance: 60
+      cooldown: 4
+      effects:
+      - EXP: (1,8*%block type%) @Block
+    '5':
+      chance: 75
+      cooldown: 5
+      effects:
+      - EXP: (2*%block type%) @Block
+lights:
+  display: §x§D§8§F§F§1§CЭ§x§C§4§F§D§3§5Л§x§B§0§F§B§4§EЕ§x§9§D§F§9§6§8К§x§8§9§F§7§8§1Т§x§7§5§F§4§9§AР§x§6§1§F§2§B§3О§x§4§E§F§0§C§DШ§x§3§A§E§E§E§6О§x§2§6§E§C§F§FК
+  description: '&6Шанс ударить молнией в противника'
+  applies-to: Swords, Bow, Crossbow, Trident
+  type: ATTACK, ATTACK_MOB, SHOOT, SHOOT_MOB
+  group: UNIKAL
+  applies:
+  - TRIDENT
+  - BOW
+  - CROSSBOW
+  - ALL_SWORD
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  powers: 25
+  levels:
+    '1':
+      chance: 35
+      cooldown: 3
+      effects:
+      - LIGHTNING: <levlplayer>-(<levlplayer>-(%power% -10)%) @Victim
+    '2':
+      chance: 45
+      cooldown: 3
+      effects:
+      - LIGHTNING: <levlplayer>-(<levlplayer>-(%power% -8)%) @Victim
+    '3':
+      chance: 55
+      cooldown: 4
+      effects:
+      - LIGHTNING: <levlplayer>-(<levlplayer>-(%power% -6)%) @Victim
+    '4':
+      chance: 65
+      cooldown: 4
+      effects:
+      - LIGHTNING: <levlplayer>-(<levlplayer>-(%power% -3)%) @Victim
+    '5':
+      chance: 75
+      cooldown: 4
+      effects:
+      - LIGHTNING: <levlplayer>-(<levlplayer>-(%power% -1)%) @Victim
+deflights:
+  display: §x§F§B§4§3§1§1Г§x§F§B§5§6§1§0Р§x§F§C§6§9§0§FО§x§F§C§7§C§0§EМ§x§F§D§8§F§0§DО§x§F§D§A§2§0§CО§x§F§E§B§5§0§BТ§x§F§E§C§8§0§AВ§x§F§F§D§B§0§9О§x§F§F§E§E§0§8Д
+  description: '&6Шанс блокировать удар молнией'
+  applies-to: Armor
+  type: DEFENSE, DEFENSE_MOB
+  group: UNIKAL
+  applies:
+  - ALL_ARMOR
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  powers: 25
+  levels:
+    '1':
+      chance: 35
+      cooldown: 3
+      effects:
+      - 'DEFENSE: (%power% -1)'
+    '2':
+      chance: 45
+      cooldown: 3
+      effects:
+      - 'DEFENSE: (%power% -3)'
+    '3':
+      chance: 55
+      cooldown: 4
+      effects:
+      - 'DEFENSE: (%power% -6)'
+    '4':
+      chance: 65
+      cooldown: 4
+      effects:
+      - 'DEFENSE: (%power% -8)'
+    '5':
+      chance: 75
+      cooldown: 4
+      effects:
+      - 'DEFENSE: (%power% -10)'
+allure:
+  display: §x§3§6§F§B§7§7П§x§3§8§F§4§8§6Р§x§3§9§E§D§9§5И§x§3§B§E§7§A§4Т§x§3§D§E§0§B§3Я§x§3§E§D§9§C§3Ж§x§4§0§D§2§D§2Е§x§4§2§C§C§E§1Н§x§4§3§C§5§F§0И§x§4§5§B§E§F§FЕ
+  description: '&6Ваша атака притягивает к вам жертву'
+  applies-to: Trident
+  type: ATTACK_MOB, ATTACK, SHOOT, SHOOT_MOB
+  group: UNIKAL
+  applies:
+  - TRIDENT
+  levels:
+    '1':
+      chance: 30
+      effects:
+      - PULL_CLOSER:1 @Victim
+    '2':
+      chance: 60
+      effects:
+      - PULL_CLOSER:2 @Victim
+    '3':
+      chance: 80
+      effects:
+      - PULL_CLOSER:3 @Victim
+frenzy:
+  display: §x§9§8§1§C§0§DП§x§A§5§1§9§0§BО§x§B§2§1§5§0§AД§x§B§F§1§2§0§8Р§x§C§C§0§E§0§7Ы§x§D§8§0§B§0§5В§x§E§5§0§7§0§3Н§x§F§2§0§4§0§2И§x§F§F§0§0§0§0К
+  description: '&6Шанс Взрыва при ударе'
+  applies-to: Trident
+  type: SHOOT, SHOOT_MOB
+  group: UNIKAL
+  applies:
+  - TRIDENT
+  levels:
+    '1':
+      chance: 10
+      cooldown: 7
+      effects:
+      - TNT @Victim
+      - PARTICLE:SONIC_BOOM:200:3 @Victim
+      - POTION:BLINDNESS:2:120 @Victim
+    '2':
+      chance: 30
+      cooldown: 8
+      effects:
+      - TNT @Victim
+      - PARTICLE:SONIC_BOOM:200:3 @Victim
+      - POTION:BLINDNESS:2:120 @Victim
+    '3':
+      chance: 50
+      cooldown: 8
+      effects:
+      - TNT @Victim
+      - PARTICLE:SONIC_BOOM:200:3 @Victim
+      - POTION:BLINDNESS:2:120 @Victim
+    '4':
+      chance: 70
+      cooldown: 8
+      effects:
+      - TNT @Victim
+      - PARTICLE:SONIC_BOOM:200:3 @Victim
+      - POTION:BLINDNESS:2:120 @Victim
+    '5':
+      chance: 90
+      cooldown: 9
+      effects:
+      - TNT @Victim
+      - PARTICLE:SONIC_BOOM:200:3 @Victim
+      - POTION:BLINDNESS:2:120 @Victim
+paralyze:
+  display: §x§5§0§4§B§F§BП§x§5§E§6§9§D§4А§x§6§B§8§7§A§DР§x§7§9§A§5§8§6А§x§8§7§C§3§5§EЛ§x§9§4§E§1§3§7И§x§A§2§F§F§1§0Ч
+  description: '&6Создает молниеносный эффект, парализуя жертву. Заставляя её двигаться
+    медленее'
+  applies-to: Crossbow
+  type: ATTACK, ATTACK_MOB, SHOOT, SHOOT_MOB
+  group: UNIKAL
+  applies:
+  - CROSSBOW
+  levels:
+    '1':
+      chance: 20
+      cooldown: 3
+      effects:
+      - LIGHTNING @Victim
+      - EXTINGUISH @Victim
+      - POTION:SLOW:0:90 @Victim
+      - POTION:SLOW_DIGGING:0:90 @Victim
+    '2':
+      chance: 30
+      cooldown: 3
+      effects:
+      - LIGHTNING @Victim
+      - EXTINGUISH @Victim
+      - POTION:SLOW:1:100 @Victim
+      - POTION:SLOW_DIGGING:1:100 @Victim
+    '3':
+      chance: 50
+      cooldown: 3
+      effects:
+      - LIGHTNING @Victim
+      - EXTINGUISH @Victim
+      - POTION:SLOW:2:60 @Victim
+      - POTION:SLOW_DIGGING:2:60 @Victim
+    '4':
+      chance: 80
+      cooldown: 3
+      effects:
+      - LIGHTNING @Victim
+      - EXTINGUISH @Victim
+      - POTION:SLOW:3:100 @Victim
+      - POTION:SLOW_DIGGING:3:100 @Victim
+momentum:
+  display: §x§0§9§B§0§F§BР§x§1§6§B§9§F§5Е§x§2§3§C§2§E§EА§x§3§0§C§A§E§8К§x§3§D§D§3§E§2Т§x§4§A§D§C§D§BИ§x§5§7§E§5§D§5В§x§6§4§E§D§C§FН§x§7§1§F§6§C§8Ы§x§7§E§F§F§C§2Й
+  description: '&6Шанс увеличить скорость с помощью фейерверка'
+  applies-to: Elytra
+  type: RIGHT_CLICK
+  group: UNIKAL
+  applies:
+  - ELYTRA
+  levels:
+    '1':
+      chance: 15
+      cooldown: 3
+      condition: '%player is holding% = FIREWORK_ROCKET : %allow%'
+      effects:
+      - POTION:SPEED:0:40
+    '2':
+      chance: 35
+      cooldown: 3
+      condition: '%player is holding% = FIREWORK_ROCKET : %allow%'
+      effects:
+      - POTION:SPEED:1:60
+    '3':
+      chance: 65
+      cooldown: 3
+      condition: '%player is holding% = FIREWORK_ROCKET : %allow%'
+      effects:
+      - POTION:SPEED:2:80
+reinforced:
+  display: §x§0§0§6§2§F§BП§x§0§4§6§E§E§CЛ§x§0§8§7§A§D§DО§x§0§B§8§6§C§FТ§x§0§F§9§2§C§0Н§x§1§3§9§E§B§1Е§x§1§7§A§A§A§2Е §x§1§A§B§7§9§4В§x§1§E§C§3§8§5О§x§2§2§C§F§7§6З§x§2§6§D§B§6§7Д§x§2§9§E§7§5§9У§x§2§D§F§3§4§AХ§x§3§1§F§F§3§BА
+  description: '&6Уменьшает наносимый вам урон'
+  applies-to: Elytra
+  type: DEFENSE, DEFENSE_MOB, DEFENSE_PROJECTILE
+  group: UNIKAL
+  applies:
+  - ELYTRA
+  levels:
+    '1':
+      chance: 15
+      cooldown: 1
+      effects:
+      - DECREASE_DAMAGE:15
+    '2':
+      chance: 45
+      cooldown: 1
+      effects:
+      - DECREASE_DAMAGE:25
+    '3':
+      chance: 60
+      cooldown: 1
+      effects:
+      - DECREASE_DAMAGE:35
+    '4':
+      chance: 75
+      cooldown: 1
+      effects:
+      - DECREASE_DAMAGE:45
+waterwalker:
+  display: §x§B§6§7§1§0§7В§x§A§8§7§E§1§6О§x§9§A§8§B§2§6Д§x§8§B§9§8§3§5А §x§7§D§A§5§4§4Н§x§6§F§B§2§5§3Е §x§6§1§B§E§6§3П§x§5§3§C§B§7§2О§x§4§5§D§8§8§1М§x§3§6§E§5§9§0Е§x§2§8§F§2§A§0Х§x§1§A§F§F§A§FА
+  description: '&6Ходить по воде'
+  applies-to: Boots
+  type: EFFECT_STATIC
+  group: UNIKAL
+  applies:
+  - ALL_BOOTS
+  levels:
+    '1':
+      effects:
+      - WATER_WALKER
+lavarwalker:
+  display: §x§F§B§9§5§4§8Л§x§E§5§9§A§5§9А§x§C§F§A§0§6§9В§x§B§A§A§5§7§AА §x§A§4§A§B§8§BН§x§8§E§B§0§9§BЕ §x§7§8§B§6§A§CП§x§6§2§B§B§B§CО§x§4§C§C§1§C§DМ§x§3§7§C§6§D§EЕ§x§2§1§C§C§E§EХ§x§0§B§D§1§F§FА
+  description: '&6Ходить по лаве'
+  applies-to: Boots
+  type: EFFECT_STATIC
+  group: UNIKAL
+  applies:
+  - ALL_BOOTS
+  levels:
+    '1':
+      effects:
+      - LAVA_WALKER
+strife:
+  display: §x§E§4§1§0§E§6Б§x§C§2§1§2§E§BО§x§A§1§1§4§F§0Е§x§7§F§1§6§F§5В§x§5§E§1§8§F§AО§x§3§C§1§A§F§FЙ
+  description: '&6Увеличивает урон от трезубца в ближнем бою'
+  applies-to: Trident
+  type: ATTACK, ATTACK_MOB
+  group: LEGENDA
+  settings:
+    newVersionsOnly: true
+  applies:
+  - TRIDENT
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  levels:
+    '1':
+      chance: 30
+      cooldown: 3
+      effects:
+      - INCREASE_DAMAGE:15
+    '2':
+      chance: 50
+      cooldown: 6
+      effects:
+      - INCREASE_DAMAGE:25
+    '3':
+      chance: 100
+      cooldown: 8
+      effects:
+      - INCREASE_DAMAGE:30
+planter:
+  display: §x§F§B§A§A§4§8С§x§E§E§B§5§4§1Е§x§E§1§B§F§3§AЯ§x§D§4§C§A§3§2Л§x§C§7§D§5§2§BК§x§B§A§D§F§2§4А §x§A§D§E§A§1§D3
+    §x§A§0§F§4§1§5х §x§9§3§F§F§0§E3
+  description: '&6Посадите семена и культуры в области 3x3 с помощью shift + щелчок
+    правой кнопкой мыши.'
+  applies-to: Hoes
+  type: RIGHT_CLICK
+  group: LEGENDA
+  applies:
+  - ALL_HOE
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  levels:
+    '1':
+      condition:
+      - '%player is sneaking% = true : %allow%'
+      cooldown: 3
+      effects:
+      - PLANT:1
+    '2':
+      condition:
+      - '%player is sneaking% = true : %allow%'
+      cooldown: 2
+      effects:
+      - PLANT:1
+    '3':
+      condition:
+      - '%player is sneaking% = true : %allow%'
+      effects:
+      - PLANT:1
+unbreakable:
+  display: §x§B§4§1§8§F§BН§x§A§4§1§5§E§9Е§x§9§3§1§3§D§6Р§x§8§3§1§0§C§4У§x§7§2§0§D§B§2Ш§x§6§2§0§A§9§FИ§x§5§1§0§8§8§DМ§x§4§1§0§5§7§AЫ§x§3§0§0§2§6§8Й
+  description: '&6Инструменты с этим заклинанием становятся Нерушимыми'
+  applies-to: Tools
+  type: MINING, ATTACK, ATTACK_MOB, BLOCK
+  group: UNIKAL
+  applies:
+  - ALL_ITEMS
+  levels:
+    '1':
+      effects:
+      - REPAIR
+wither:
+  display: §x§7§B§1§1§A§CВ§x§7§7§0§E§B§AИ§x§7§3§0§B§C§9З§x§6§E§0§8§D§7Е§x§6§A§0§5§E§5Р
+  description: '&6Шанс придать эффект wither'
+  applies-to: Armor
+  type: DEFENSE, DEFENSE_MOB
+  group: UNIKAL
+  applies:
+  - ALL_ARMOR
+  levels:
+    '1':
+      chance: 9
+      cooldown: 3
+      effects:
+      - POTION:WITHER:0:60 @Attacker
+    '2':
+      chance: 11
+      cooldown: 3
+      effects:
+      - POTION:WITHER:0:100 @Attacker
+    '3':
+      chance: 14
+      cooldown: 3
+      effects:
+      - POTION:WITHER:0:140 @Attacker
+    '4':
+      chance: 17
+      cooldown: 3
+      effects:
+      - POTION:WITHER:1:60 @Attacker
+    '5':
+      chance: 21
+      cooldown: 3
+      effects:
+      - POTION:WITHER:1:100 @Attacker
+glowing:
+  display: §x§F§F§F§5§9§6Н§x§F§5§F§4§9§2О§x§E§C§F§2§8§DЧ§x§E§2§F§1§8§9Н§x§D§8§E§F§8§4О§x§C§F§E§E§8§0Е §x§C§5§E§C§7§BЗ§x§B§C§E§B§7§7Р§x§B§2§E§9§7§2Е§x§A§8§E§8§6§EН§x§9§F§E§6§6§9И§x§9§5§E§5§6§5Е
+  description: '&6Обеспечивает постоянное ночное зрение'
+  applies-to: Helmet
+  type: EFFECT_STATIC
+  group: UNIKAL
+  applies:
+  - ALL_HELMET
+  levels:
+    '1':
+      effects:
+      - POTION:NIGHT_VISION:0
+veinminer:
+  display: §x§2§6§F§F§2§3Д§x§3§1§F§C§2§AО§x§3§C§F§A§3§0Б§x§4§7§F§7§3§7Ы§x§5§2§F§5§3§DД§x§5§E§F§2§4§4Ч§x§6§9§E§F§4§BИ§x§7§4§E§D§5§1К §x§7§F§E§A§5§8Р§x§8§A§E§8§5§EУ§x§9§5§E§5§6§5Д
+  description: '&6Добывать целую жилу руд'
+  applies-to: Pickaxes
+  group: UNIKAL
+  type: MINING
+  applies:
+  - ALL_PICKAXE
+  levels:
+    '1':
+      chance: 15
+      cooldown: 4
+      settings:
+        whitelist:
+        - COAL_ORE
+        - COPPER_ORE
+        - IRON_ORE
+        - GOLD_ORE
+        - LAPIS_ORE
+        - REDSTONE_ORE
+        - DIAMOND_ORE
+        - EMERALD_ORE
+        - NETHER_QUARTZ_ORE
+        - NETHER_GOLD_ORE
+        - ANCIENT_DEBRIS
+        - DEEPSLATE_COAL_ORE
+        - DEEPSLATE_COPPER_ORE
+        - DEEPSLATE_IRON_ORE
+        - DEEPSLATE_GOLD_ORE
+        - DEEPSLATE_LAPIS_ORE
+        - DEEPSLATE_REDSTONE_ORE
+        - DEEPSLATE_DIAMOND_ORE
+        - DEEPSLATE_EMERALD_ORE
+      effects:
+      - BREAK_BLOCK @Veinmine
+    '2':
+      chance: 35
+      cooldown: 3
+      settings:
+        whitelist:
+        - COAL_ORE
+        - COPPER_ORE
+        - IRON_ORE
+        - GOLD_ORE
+        - LAPIS_ORE
+        - REDSTONE_ORE
+        - DIAMOND_ORE
+        - EMERALD_ORE
+        - NETHER_QUARTZ_ORE
+        - NETHER_GOLD_ORE
+        - ANCIENT_DEBRIS
+        - DEEPSLATE_COAL_ORE
+        - DEEPSLATE_COPPER_ORE
+        - DEEPSLATE_IRON_ORE
+        - DEEPSLATE_GOLD_ORE
+        - DEEPSLATE_LAPIS_ORE
+        - DEEPSLATE_REDSTONE_ORE
+        - DEEPSLATE_DIAMOND_ORE
+        - DEEPSLATE_EMERALD_ORE
+      effects:
+      - BREAK_BLOCK @Veinmine
+    '3':
+      settings:
+        whitelist:
+        - COAL_ORE
+        - COPPER_ORE
+        - IRON_ORE
+        - GOLD_ORE
+        - LAPIS_ORE
+        - REDSTONE_ORE
+        - DIAMOND_ORE
+        - EMERALD_ORE
+        - NETHER_QUARTZ_ORE
+        - NETHER_GOLD_ORE
+        - ANCIENT_DEBRIS
+        - DEEPSLATE_COAL_ORE
+        - DEEPSLATE_COPPER_ORE
+        - DEEPSLATE_IRON_ORE
+        - DEEPSLATE_GOLD_ORE
+        - DEEPSLATE_LAPIS_ORE
+        - DEEPSLATE_REDSTONE_ORE
+        - DEEPSLATE_DIAMOND_ORE
+        - DEEPSLATE_EMERALD_ORE
+      effects:
+      - BREAK_BLOCK @Veinmine
+decapitation:
+  display: §x§F§F§0§0§0§0П§x§E§8§0§3§3§9А§x§D§0§0§6§7§3Л§x§B§9§0§9§A§CА§x§A§1§0§C§E§5Ч
+  description: Голова противника
+  applies-to: Swords, Axes, Trident, Mace
+  type: KILL_PLAYER
+  group: UNIKAL
+  applies:
+  - ALL_SWORD
+  - ALL_AXE
+  - TRIDENT
+  - MACE
+  levels:
+    '1':
+      chance: 1
+      cooldown: 10
+      effects:
+      - DROP_HEAD @Victim
+    '2':
+      chance: 3
+      cooldown: 10
+      effects:
+      - DROP_HEAD @Victim
+    '3':
+      chance: 5
+      cooldown: 10
+      effects:
+      - DROP_HEAD @Victim
+indikator:
+  display: §x§1§8§F§B§D§4И§x§3§5§F§8§C§1Н§x§5§2§F§5§A§FД§x§6§F§F§2§9§CИ§x§8§C§E§F§8§9К§x§A§8§E§B§7§6А§x§C§5§E§8§6§4Т§x§E§2§E§5§5§1О§x§F§F§E§2§3§EР
+  description: '&6Подсвечивает руды'
+  applies-to: Pickaxes
+  type: MINING
+  group: LEGENDA
+  applies:
+  - ALL_PICKAXE
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  levels:
+    '1':
+      radius: 6
+      settings:
+        whitelist:
+        - COAL_ORE
+        - COPPER_ORE
+        - IRON_ORE
+        - GOLD_ORE
+        - LAPIS_ORE
+        - REDSTONE_ORE
+        - DIAMOND_ORE
+        - EMERALD_ORE
+        - NETHER_QUARTZ_ORE
+        - NETHER_GOLD_ORE
+        - ANCIENT_DEBRIS
+        - DEEPSLATE_COAL_ORE
+        - DEEPSLATE_COPPER_ORE
+        - DEEPSLATE_IRON_ORE
+        - DEEPSLATE_GOLD_ORE
+        - DEEPSLATE_LAPIS_ORE
+        - DEEPSLATE_REDSTONE_ORE
+        - DEEPSLATE_DIAMOND_ORE
+        - DEEPSLATE_EMERALD_ORE
+      effects:
+      - INDIKATOR @Block
+    '2':
+      radius: 7
+      settings:
+        whitelist:
+        - COAL_ORE
+        - COPPER_ORE
+        - IRON_ORE
+        - GOLD_ORE
+        - LAPIS_ORE
+        - REDSTONE_ORE
+        - DIAMOND_ORE
+        - EMERALD_ORE
+        - NETHER_QUARTZ_ORE
+        - NETHER_GOLD_ORE
+        - ANCIENT_DEBRIS
+        - DEEPSLATE_COAL_ORE
+        - DEEPSLATE_COPPER_ORE
+        - DEEPSLATE_IRON_ORE
+        - DEEPSLATE_GOLD_ORE
+        - DEEPSLATE_LAPIS_ORE
+        - DEEPSLATE_REDSTONE_ORE
+        - DEEPSLATE_DIAMOND_ORE
+        - DEEPSLATE_EMERALD_ORE
+      effects:
+      - INDIKATOR @Block
+    '3':
+      radius: 8
+      settings:
+        whitelist:
+        - COAL_ORE
+        - COPPER_ORE
+        - IRON_ORE
+        - GOLD_ORE
+        - LAPIS_ORE
+        - REDSTONE_ORE
+        - DIAMOND_ORE
+        - EMERALD_ORE
+        - NETHER_QUARTZ_ORE
+        - NETHER_GOLD_ORE
+        - ANCIENT_DEBRIS
+        - DEEPSLATE_COAL_ORE
+        - DEEPSLATE_COPPER_ORE
+        - DEEPSLATE_IRON_ORE
+        - DEEPSLATE_GOLD_ORE
+        - DEEPSLATE_LAPIS_ORE
+        - DEEPSLATE_REDSTONE_ORE
+        - DEEPSLATE_DIAMOND_ORE
+        - DEEPSLATE_EMERALD_ORE
+      effects:
+      - INDIKATOR @Block
+    '4':
+      radius: 9
+      settings:
+        whitelist:
+        - COAL_ORE
+        - COPPER_ORE
+        - IRON_ORE
+        - GOLD_ORE
+        - LAPIS_ORE
+        - REDSTONE_ORE
+        - DIAMOND_ORE
+        - EMERALD_ORE
+        - NETHER_QUARTZ_ORE
+        - NETHER_GOLD_ORE
+        - ANCIENT_DEBRIS
+        - DEEPSLATE_COAL_ORE
+        - DEEPSLATE_COPPER_ORE
+        - DEEPSLATE_IRON_ORE
+        - DEEPSLATE_GOLD_ORE
+        - DEEPSLATE_LAPIS_ORE
+        - DEEPSLATE_REDSTONE_ORE
+        - DEEPSLATE_DIAMOND_ORE
+        - DEEPSLATE_EMERALD_ORE
+      effects:
+      - INDIKATOR @Block
+    '5':
+      radius: 10
+      settings:
+        whitelist:
+        - COAL_ORE
+        - COPPER_ORE
+        - IRON_ORE
+        - GOLD_ORE
+        - LAPIS_ORE
+        - REDSTONE_ORE
+        - DIAMOND_ORE
+        - EMERALD_ORE
+        - NETHER_QUARTZ_ORE
+        - NETHER_GOLD_ORE
+        - ANCIENT_DEBRIS
+        - DEEPSLATE_COAL_ORE
+        - DEEPSLATE_COPPER_ORE
+        - DEEPSLATE_IRON_ORE
+        - DEEPSLATE_GOLD_ORE
+        - DEEPSLATE_LAPIS_ORE
+        - DEEPSLATE_REDSTONE_ORE
+        - DEEPSLATE_DIAMOND_ORE
+        - DEEPSLATE_EMERALD_ORE
+      effects:
+      - INDIKATOR @Block
+signal:
+  display: §x§F§4§F§B§1§1С§x§F§5§E§F§1§0И§x§F§6§E§2§1§0Г§x§F§7§D§6§0§FН§x§F§8§C§A§0§FА§x§F§9§B§E§0§EЛ§x§F§A§B§1§0§EИ§x§F§B§A§5§0§DЗ§x§F§C§9§9§0§DА§x§F§D§8§D§0§CТ§x§F§E§8§0§0§CО§x§F§F§7§4§0§BР
+  description: '&6Предупреждает о низкой прочности'
+  applies-to: Tools
+  type: MINING, ATTACK, ATTACK_MOB, BLOCK
+  group: LEGENDA
+  applies:
+  - ALL_TOOLS
+  - ALL_ITEMS
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  levels:
+    '1':
+      effects:
+      - BREAK @Tools
+palirol:
+  display: §x§B§6§B§4§F§BП§x§A§B§B§C§F§CА§x§9§F§C§4§F§CЛ§x§9§4§C§C§F§DИ§x§8§9§D§3§F§DР§x§7§E§D§B§F§EО§x§7§2§E§3§F§EЛ§x§6§7§E§B§F§FЬ
+  description: '&6Шанс пробегать через паутину'
+  applies-to: Armor
+  type: DEFENSE, DEFENSE_MOB
+  group: UNIKAL
+  applies:
+  - ALL_LEGGINGS
+  enchanttable: true
+  chans: 5
+  enchantvilager: true
+  levels:
+    '1':
+      effects:
+      - PALIROL: 30%
+    '2':
+      effects:
+      - PALIROL: 70%
+    '3':
+      effects:
+      - PALIROL: 100%
+iceshtorm:
+  display: §x§0§4§C§C§F§BЛ§x§0§9§D§1§F§3Е§x§0§D§D§5§E§BД§x§1§2§D§A§E§2Я§x§1§7§D§F§D§AН§x§1§B§E§3§D§2О§x§2§0§E§8§C§AЙ §x§2§4§E§C§C§2Ш§x§2§9§F§1§B§AТ§x§2§E§F§6§B§1О§x§3§2§F§A§A§9Р§x§3§7§F§F§A§1М
+  description: '&6ПКМ замораживает всех в радиусе и бьет холодом'
+  applies-to: Swords
+  type: ATTACK, ATTACK_MOB
+  group: UNIKAL
+  applies:
+  - ALL_SWORD
+  enchanttable: true
+  chans: 5
+  enchantvilager: true
+  levels:
+    '1':
+      chance: 100
+      progress: 5
+      cooldown: 10
+      effects:
+      - ICE: RADIUS 10 @Victim
+      - POTION:BLINDNESS:0:60 @Victim
+      - WAIT:40
+      - POTION:SLOW:0:20 @Victim
+    '2':
+      chance: 100
+      progress: 5
+      cooldown: 8
+      effects:
+      - ICE: RADIUS 20 @Victim
+      - POTION:BLINDNESS:0:60 @Victim
+      - WAIT:30
+      - POTION:SLOW:0:30 @Victim
+    '3':
+      chance: 100
+      progress: 5
+      cooldown: 7
+      effects:
+      - ICE: RADIUS 30 @Victim
+      - POTION:BLINDNESS:0:60 @Victim
+      - WAIT:20
+      - POTION:SLOW:0:40 @Victim
+    '4':
+      chance: 100
+      progress: 5
+      cooldown: 6
+      effects:
+      - ICE: RADIUS 30 @Victim
+      - POTION:BLINDNESS:0:60 @Victim
+      - WAIT:15
+      - POTION:SLOW:0:50 @Victim
+    '5':
+      chance: 100
+      progress: 5
+      cooldown: 5
+      effects:
+      - ICE: RADIUS 30 @Victim
+      - POTION:BLINDNESS:0:60 @Victim
+      - WAIT:10
+      - POTION:SLOW:0:60 @Victim
+permafrost:
+  display: §x§F§B§0§0§0§0К§x§F§B§1§4§1§4Р§x§F§C§2§7§2§7О§x§F§C§3§B§3§BВ§x§F§C§4§E§4§EО§x§F§D§6§2§6§2П§x§F§D§7§6§7§6У§x§F§D§8§9§8§9С§x§F§D§9§D§9§DК§x§F§E§B§1§B§1А§x§F§E§C§4§C§4Т§x§F§E§D§8§D§8Е§x§F§F§E§B§E§BЛ§x§F§F§F§F§F§FЬ
+  description: '&6Шанс замедлить и обескровить противников'
+  applies-to: Swords, Trident
+  type: ATTACK, ATTACK_MOB, SHOOT, SHOOT_MOB
+  group: LEGENDA
+  applies:
+  - ALL_SWORD
+  - TRIDENT
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  levels:
+    '1':
+      chance: 5
+      cooldown: 12
+      effects:
+      - DO_HARM:1 @Victim
+      - BLOOD @Victim
+      - POTION:SLOW:0:20 @Victim
+      - POTION:POISON:0:20 @Victim
+      - WAIT:20
+      - DO_HARM:1 @Victim
+      - BLOOD @Victim
+      - WAIT:20
+      - DO_HARM:1 @Victim
+      - BLOOD @Victim
+    '2':
+      chance: 15
+      cooldown: 12
+      effects:
+      - DO_HARM:2 @Victim
+      - BLOOD @Victim
+      - POTION:SLOW:0:40 @Victim
+      - POTION:POISON:0:40 @Victim
+      - WAIT:20
+      - DO_HARM:2 @Victim
+      - BLOOD @Victim
+      - WAIT:20
+      - DO_HARM:1 @Victim
+      - BLOOD @Victim
+    '3':
+      chance: 25
+      cooldown: 12
+      effects:
+      - DO_HARM:3 @Victim
+      - BLOOD @Victim
+      - POTION:SLOW:0:50 @Victim
+      - POTION:POISON:0:50 @Victim
+      - WAIT:20
+      - DO_HARM:2 @Victim
+      - BLOOD @Victim
+      - WAIT:20
+      - DO_HARM:1 @Victim
+      - BLOOD @Victim
+    '4':
+      chance: 35
+      cooldown: 13
+      effects:
+      - DO_HARM:3 @Victim
+      - BLOOD @Victim
+      - POTION:SLOW:0:60 @Victim
+      - POTION:POISON:0:60 @Victim
+      - WAIT:20
+      - DO_HARM:2 @Victim
+      - BLOOD @Victim
+      - WAIT:20
+      - DO_HARM:2 @Victim
+      - BLOOD @Victim
+    '5':
+      chance: 45
+      cooldown: 13
+      effects:
+      - DO_HARM:3 @Victim
+      - BLOOD @Victim
+      - POTION:SLOW:1:60 @Victim
+      - POTION:POISON:1:60 @Victim
+      - WAIT:20
+      - DO_HARM:3 @Victim
+      - BLOOD @Victim
+      - WAIT:20
+      - DO_HARM:2 @Victim
+      - BLOOD @Victim
+smelting:
+  applies-to: Tools
+  display: §x§F§B§0§0§0§0П§x§F§B§1§1§0§8Е§x§F§C§2§2§0§FР§x§F§C§3§3§1§7Е§x§F§D§4§4§1§FП§x§F§D§5§5§2§6Л§x§F§E§6§6§2§EА§x§F§E§7§7§3§6В§x§F§F§8§8§3§DК§x§F§F§9§9§4§5А
+  description: '&6Шанс расплавить добытые блоки'
+  type: MINING
+  group: LEGENDA
+  applies:
+  - ALL_PICKAXE
+  - ALL_SHOVEL
+  - ALL_AXE
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  levels:
+    '1':
+      chance: 33
+      effects:
+      - SMELT: null
+
+    '2':
+      chance: 66
+      effects:
+      - SMELT: null
+
+    '3':
+      progress: 25
+      chance: 100
+      effects:
+      - SMELT: null
+
+trench:
+  display: §x§9§C§4§0§0§6Э§x§A§3§4§C§0§EК§x§A§9§5§8§1§5С§x§B§0§6§4§1§DК§x§B§6§7§1§2§4А§x§B§D§7§D§2§CВ§x§C§4§8§9§3§4А§x§C§A§9§5§3§BТ§x§D§1§A§1§4§3О§x§D§7§A§D§4§AР §x§D§E§B§9§5§2Г§x§E§5§C§5§5§AН§x§E§B§D§2§6§1О§x§F§2§D§E§6§9М§x§F§8§E§A§7§0О§x§F§F§F§6§7§8В
+  description: '&6Шанс сломать 3х3'
+  applies-to: Pickaxes, Shovels
+  type: MINING
+  group: UNIKAL
+  applies:
+  - ALL_PICKAXE
+  - ALL_SHOVEL
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  break_block_delay_ticks: 1
+  levels:
+    '1':
+      chance: 100
+      effects:
+      - 'BREAK_BLOCK: 3, 3, 1'
+    '2':
+      chance: 100
+      effects:
+      - 'BREAK_BLOCK: 3, 3, 2'
+    '3':
+      chance: 100
+      effects:
+      - 'BREAK_BLOCK: 3, 3, 3'
+    '4':
+      chance: 100
+      effects:
+      - 'BREAK_BLOCK: 3, 3, 4'
+    '5':
+      chance: 100
+      effects:
+      - 'BREAK_BLOCK: 3, 3, 5'
+telepathy:
+  enchanttable: true
+  chans: 5
+  display: §x§7§A§0§B§9§CМ§x§9§1§1§D§B§0А§x§A§8§2§F§C§4Г§x§C§0§4§2§D§7Н§x§D§7§5§4§E§BИ§x§E§E§6§6§F§FТ
+  description: '&6Телепортирует добытое в инвентарь'
+  applies-to: Tools
+  type: MINING
+  group: LEGENDA
+  applies:
+  - ALL_TOOLS
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  levels:
+    '1':
+      chance: 40
+      effects:
+      - TP_DROPS @Block
+    '2':
+      chance: 60
+      effects:
+      - TP_DROPS @Block
+    '3':
+      progress: 25
+      chance: 100
+      effects:
+      - TP_DROPS @Block
+timber:
+  enchanttable: true
+  chans: 5
+  display: §x§0§9§9§C§0§BЛ§x§0§C§A§D§1§AЕ§x§0§F§B§D§2§8С§x§1§3§C§E§3§7О§x§1§6§D§E§4§6Р§x§1§9§E§F§5§4У§x§1§C§F§F§6§3Б
+  description: '&6Шанс сломать дерево одним ударом'
+  applies-to: Axes
+  group: UNIKAL
+  type: MINING
+  applies:
+  - ALL_AXE
+  levels:
+    '1':
+      chance: 35
+      cooldown: 6
+      progress: 15
+      effects:
+      - BREAK_TREE @Block
+    '2':
+      chance: 70
+      cooldown: 7
+      progress: 20
+      effects:
+      - BREAK_TREE @Block
+    '3':
+      chance: 100
+      progress: 25
+      effects:
+      - BREAK_TREE @Block
+lavawalker:
+  display: §x§F§B§9§5§4§8Л§x§E§5§9§A§5§9А§x§C§F§A§0§6§9В§x§B§A§A§5§7§AА §x§A§4§A§B§8§BН§x§8§E§B§0§9§BЕ§x§7§8§B§6§A§CП§x§6§2§B§B§B§CО§x§4§C§C§1§C§DМ§x§3§7§C§6§D§EЕ§x§2§1§C§C§E§EХ§x§0§B§D§1§F§FА
+  description: '&6Ходить по лаве'
+  applies-to: Boots
+  type: EFFECT_STATIC
+  group: UNIKAL
+  applies:
+  - ALL_BOOTS
+  levels:
+    '1':
+      effects:
+      - LAVA_WALKER
+shield:
+  display: §x§B§E§5§C§1§2Т§x§C§9§6§D§1§3Ы§x§D§4§7§E§1§5Л§x§D§F§8§F§1§6О§x§E§9§9§F§1§7В§x§F§4§B§0§1§9И§x§F§F§C§1§1§AК
+  description: '&6Создает щиты вокруг Вас'
+  applies-to: Shield
+  type: DEFENSE, DEFENSE_MOB
+  group: UNIKAL
+  applies:
+  - SHIELD
+  enchanttable: true
+  chans: 1
+  enchantvilager: true
+  levels:
+    '1':
+      effects:
+      - SHIELD: 1
+    '2':
+      effects:
+      - SHIELD: 2
+    '3':
+      effects:
+      - SHIELD: 3

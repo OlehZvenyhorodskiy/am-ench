@@ -1,0 +1,69 @@
+# Конфиг нового предмета-экскаватора для команды /aquaenchant giveitem excavator
+# Вы можете менять материал, название, лор и настройки голограммы.
+
+id: excavator
+
+# Материал блока, который ставится в чанке
+material: COPPER_BULB
+
+# Отображаемое название предмета
+name: '&6ЭКСКАВАТОР'
+
+# Лор предмета
+lore:
+  - '&7Установи в том чанке, который хочешь раскопать'
+  - '&7При установке очищает весь чанк, если не пересекается'
+  - '&7с чужими регионами WorldGuard.'
+
+# Дополнительные настройки экскаватора
+excavator:
+  # Стартовое количество топлива, которое отображается в голограмме
+  start-fuel: 0
+  # Формат текста голограммы. %fuel% будет заменён на число топлива.
+  hologram-text: '&eТопливо: &f%fuel%'
+
+# Здесь при желании можно указать зачарования из enachants.yml,
+# чтобы предмет имел красивое свечение:
+#enchants:
+#  some_enchant_id: 1
+
+whitelist:
+  - COAL_ORE
+  - DEEPSLATE_COAL_ORE
+  - IRON_ORE
+  - DEEPSLATE_IRON_ORE
+  - COPPER_ORE
+  - DEEPSLATE_COPPER_ORE
+  - GOLD_ORE
+  - DEEPSLATE_GOLD_ORE
+  - REDSTONE_ORE
+  - DEEPSLATE_REDSTONE_ORE
+  - EMERALD_ORE
+  - DEEPSLATE_EMERALD_ORE
+  - LAPIS_ORE
+  - DEEPSLATE_LAPIS_ORE
+  - DIAMOND_ORE
+  - DEEPSLATE_DIAMOND_ORE
+  - NETHER_GOLD_ORE
+  - NETHER_QUARTZ_ORE
+  - ANCIENT_DEBRIS
+
+darklist:
+  - BEDROCK
+  - END_PORTAL_FRAME
+  - END_PORTAL
+  - END_GATEWAY
+  - NETHER_PORTAL
+  - SPAWNER
+  - TRIAL_SPAWNER
+  - VAULT
+  - REINFORCED_DEEPSLATE
+  - COMMAND_BLOCK
+  - CHAIN_COMMAND_BLOCK
+  - REPEATING_COMMAND_BLOCK
+  - BARRIER
+  - STRUCTURE_BLOCK
+  - STRUCTURE_VOID
+  - JIGSAW
+  - LIGHT
+  - COPPER_BULB
