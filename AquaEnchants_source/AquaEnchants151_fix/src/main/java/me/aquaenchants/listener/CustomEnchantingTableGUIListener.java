@@ -28,6 +28,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 
 import net.kyori.adventure.text.Component;
@@ -96,11 +98,88 @@ public final class CustomEnchantingTableGUIListener implements Listener {
     private final Map<UUID, Session> sessions = new HashMap<>();
     private BukkitTask animationTask;
 
+    /**
+     * "Зерно зачарования" игрока — аналог ванильного enchantment seed.
+     * Хранится в PDC игрока (переживает перезаход) и меняется ТОЛЬКО после
+     * успешного зачарования. Пока зерно не изменилось, один и тот же предмет
+     * всегда показывает один и тот же список предложений — как в ванилле.
+     */
+    private final NamespacedKey keyEnchantSeed;
+
     public CustomEnchantingTableGUIListener(AquaEnchatsPlugin plugin, EnchantManager enchantManager, me.aquaenchants.config.TableSettingsManager tableSettingsManager) {
         this.plugin = plugin;
         this.enchantManager = enchantManager;
         this.tableSettingsManager = tableSettingsManager;
+        this.keyEnchantSeed = new NamespacedKey(plugin, "enchant_seed");
         startAnimationTask();
+    }
+
+    private long getEnchantSeed(Player p) {
+        try {
+            PersistentDataContainer pdc = p.getPersistentDataContainer();
+            Long seed = pdc.get(keyEnchantSeed, PersistentDataType.LONG);
+            if (seed == null || seed == 0L) {
+                long fresh = ThreadLocalRandom.current().nextLong();
+                if (fresh == 0L) fresh = 1L;
+                pdc.set(keyEnchantSeed, PersistentDataType.LONG, fresh);
+                return fresh;
+            }
+            return seed;
+        } catch (Throwable ignored) {
+            return 1L;
+        }
+    }
+
+    /**
+     * Вызывается после успешного зачарования: как в ванилле, следующее
+     * предложение генерируется заново только ПОСЛЕ использования стола.
+     */
+    private void rerollEnchantSeed(Player p) {
+        try {
+            long fresh = ThreadLocalRandom.current().nextLong();
+            if (fresh == 0L) fresh = 1L;
+            p.getPersistentDataContainer().set(keyEnchantSeed, PersistentDataType.LONG, fresh);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /**
+     * Идентичность предмета, влияющая на генерацию предложений: тип предмета
+     * + его зачарования (кастомные, ванильные и записанные в книге).
+     * Долговечность и прочие метаданные намеренно не учитываются (как в ванилле).
+     */
+    private long itemIdentity(ItemStack item) {
+        List<String> parts = new ArrayList<>();
+        parts.add(item.getType().name());
+        try {
+            if (item.hasItemMeta()) {
+                ItemMeta meta = item.getItemMeta();
+                if (meta != null) {
+                    Map<Enchantment, Integer> vanilla = (meta instanceof EnchantmentStorageMeta esm)
+                            ? esm.getStoredEnchants()
+                            : meta.getEnchants();
+                    if (vanilla != null) {
+                        for (Map.Entry<Enchantment, Integer> e : vanilla.entrySet()) {
+                            if (e.getKey() != null && e.getValue() != null) {
+                                parts.add(e.getKey().getKey() + "=" + e.getValue());
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        try {
+            for (Map.Entry<CustomEnchant, Integer> e : enchantManager.getEnchantmentsOnItem(item).entrySet()) {
+                if (e.getKey() != null && e.getValue() != null) {
+                    parts.add(e.getKey().getId() + "=" + e.getValue());
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        Collections.sort(parts);
+        // String#hashCode стабилен между запусками JVM — подходит для детерминизма
+        return String.join(";", parts).hashCode();
     }
 
     private void startAnimationTask() {
@@ -416,9 +495,12 @@ public final class CustomEnchantingTableGUIListener implements Listener {
                 return;
             }
 
-            // Consume lapis and levels (1/2/3 levels)
+            // Consume lapis and XP levels.
+            // FIX: previously only lapisCost (1/2/3) levels were taken, while the UI
+            // showed a requirement of up to 30 levels. Now the displayed requirement
+            // IS the real cost: enchanting at tier III costs the full shown level.
             consumeLapis(top, offer.lapisCost);
-            p.setLevel(Math.max(0, p.getLevel() - offer.lapisCost));
+            p.setLevel(Math.max(0, p.getLevel() - offer.requiredLevel));
 
             // Apply primary enchantment
             boolean wasBook = item.getType() == Material.BOOK;
@@ -451,6 +533,10 @@ public final class CustomEnchantingTableGUIListener implements Listener {
             rollAndApplyBonusEnchantments(item, idx, power, offer);
 
             top.setItem(SLOT_ITEM, item);
+
+            // Как в ванилле: после реального зачарования "зерно" меняется,
+            // и следующие предложения будут новыми даже для того же предмета.
+            rerollEnchantSeed(p);
 
             // Distinct audio & visual effects
             if (offer.isCustom) {
@@ -632,7 +718,12 @@ public final class CustomEnchantingTableGUIListener implements Listener {
         int bookshelves = countBookshelves(s.tableLoc);
         int power = Math.min(15, bookshelves);
 
-        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        // FIX (anti "item re-place reroll"): offers are generated deterministically
+        // from the player's enchant seed + the item's identity. Taking the same item
+        // out and putting it back yields the SAME offers (as in vanilla). The list
+        // changes only after an actual enchant (see rerollEnchantSeed) or for a
+        // different item.
+        Random rnd = new Random(getEnchantSeed(p) ^ itemIdentity(item));
         int base = rnd.nextInt(1, 9) + (power / 2) + rnd.nextInt(power + 1);
         int lvl1 = Math.max(1, base / 3);
         int lvl2 = Math.max(1, (base * 2) / 3 + 1);
@@ -711,7 +802,7 @@ public final class CustomEnchantingTableGUIListener implements Listener {
 
             lore.add(ChatColor.BLUE + "Лазурит: " + (playerLapis >= offer.lapisCost ? ChatColor.GREEN : ChatColor.RED) + playerLapis + "/" + offer.lapisCost + " шт.");
             lore.add(ChatColor.GREEN + "Требуемый уровень: " + (playerLevel >= offer.requiredLevel ? ChatColor.GREEN : ChatColor.RED) + playerLevel + "/" + offer.requiredLevel + " ур.");
-            lore.add(ChatColor.YELLOW + "Стоимость опыта: " + ChatColor.WHITE + offer.lapisCost + " ур.");
+            lore.add(ChatColor.YELLOW + "Стоимость: " + ChatColor.WHITE + offer.requiredLevel + " ур. опыта" + ChatColor.DARK_GRAY + " (будет списано полностью)");
             lore.add(ChatColor.DARK_GRAY + "----------------------------");
 
             if (playerLevel >= offer.requiredLevel && playerLapis >= offer.lapisCost) {
@@ -754,33 +845,38 @@ public final class CustomEnchantingTableGUIListener implements Listener {
         return it;
     }
 
-    private Offer generateSlotOffer(ItemStack item, int lapisCost, int requiredLevel, int slotIndex, int power, ThreadLocalRandom rnd) {
-        double customRollThreshold = tableSettingsManager != null
-                ? tableSettingsManager.calculateSlotCustomChance(slotIndex, power)
-                : switch (slotIndex) {
-                    case 0 -> 10.0 + (power * 0.3);
-                    case 1 -> 18.0 + (power * 0.5);
-                    case 2 -> 28.0 + (power * 0.8);
-                    default -> 20.0;
-                };
+    private Offer generateSlotOffer(ItemStack item, int lapisCost, int requiredLevel, int slotIndex, int power, Random rnd) {
+        // Кастомные зачарования выпадают ТОЛЬКО на 3-м тире стола (slotIndex == 2)
+        // и с очень маленьким шансом. На 1-м и 2-м тирах — всегда ваниль.
+        boolean customAllowedHere = slotIndex == 2;
+        double customRollThreshold = customAllowedHere
+                ? (tableSettingsManager != null
+                    ? tableSettingsManager.calculateSlotCustomChance(slotIndex, power)
+                    : 3.0 + (power * 0.2))
+                : 0.0;
 
-        boolean shouldTryCustom = (rnd.nextDouble() * 100.0) < customRollThreshold;
+        boolean shouldTryCustom = customRollThreshold > 0 && (rnd.nextDouble() * 100.0) < customRollThreshold;
 
         if (shouldTryCustom) {
-            Offer custom = pickCustomOffer(item, lapisCost, requiredLevel, slotIndex, power, rnd);
+            Offer custom = pickCustomOffer(item, lapisCost, requiredLevel, rnd);
             if (custom != null) return custom;
         }
 
         Offer vanilla = pickVanillaOffer(item, lapisCost, requiredLevel, slotIndex, power, rnd);
         if (vanilla != null) return vanilla;
 
-        Offer customFallback = pickCustomOffer(item, lapisCost, requiredLevel, slotIndex, power, rnd);
-        if (customFallback != null) return customFallback;
+        // Запасной вариант: если на 3-м тире ванильных чар не осталось (например,
+        // предмет уже зачарован всем подходящим) — можно предложить кастомную чару.
+        // На 1-м/2-м тирах кастомных чар нет никогда.
+        if (customAllowedHere) {
+            Offer customFallback = pickCustomOffer(item, lapisCost, requiredLevel, rnd);
+            if (customFallback != null) return customFallback;
+        }
 
         return Offer.vanilla(ChatColor.GRAY + "Нет доступных чар", requiredLevel, lapisCost, null, 0);
     }
 
-    private Offer pickCustomOffer(ItemStack item, int lapisCost, int requiredLevel, int slotIndex, int power, ThreadLocalRandom rnd) {
+    private Offer pickCustomOffer(ItemStack item, int lapisCost, int requiredLevel, Random rnd) {
         boolean isBook = item.getType() == Material.BOOK;
         Map<CustomEnchant, Integer> existingCustom = enchantManager.getEnchantmentsOnItem(item);
 
@@ -790,13 +886,15 @@ public final class CustomEnchantingTableGUIListener implements Listener {
             if (!e.isEnchantTableEnabled()) continue;
             if (e.getEnchantTableChance() <= 0) continue;
 
+            // Глобально запрещённые для стола зачарования (по умолчанию — "trench",
+            // Экскаватор гномов 3x3 не выпадает на столе совсем).
+            if (tableSettingsManager != null && tableSettingsManager.isTableDisabled(e.getId())) continue;
+
             if (!isBook && !enchantManager.canApply(e, item)) continue;
 
-            if (!isBook && existingCustom.containsKey(e)) {
-                int curLvl = existingCustom.get(e);
-                int maxLvl = getMaxLevelForEnchant(e);
-                if (curLvl >= maxLvl) continue;
-            }
+            // Стол не предлагает "апгрейд" уже наложенных кастомных чар:
+            // выпадают только новые чары 1-го уровня.
+            if (!isBook && existingCustom.containsKey(e)) continue;
 
             candidates.add(e);
         }
@@ -821,8 +919,9 @@ public final class CustomEnchantingTableGUIListener implements Listener {
         }
         if (chosen == null) chosen = candidates.get(0);
 
-        int maxLevel = getMaxLevelForEnchant(chosen);
-        int level = calculateBalancedCustomLevel(maxLevel, slotIndex, requiredLevel, power, rnd);
+        // Кастомные чары со стола выпадают ТОЛЬКО 1-го уровня (как и просили:
+        // "выпадать только маленького уровня"). Повышение уровня — через наковальню/книги.
+        int level = 1;
 
         String display = chosen.getDisplayName() != null ? chosen.getDisplayName() : chosen.getId();
         return Offer.custom(display + " " + ChatColor.GRAY + roman(level), chosen.getDescription(), chosen.getGroup(), requiredLevel, lapisCost, chosen.getId(), level);
@@ -833,7 +932,7 @@ public final class CustomEnchantingTableGUIListener implements Listener {
         return Collections.max(e.getLevels().keySet());
     }
 
-    private int calculateBalancedCustomLevel(int maxLevel, int slotIndex, int requiredLevel, int power, ThreadLocalRandom rnd) {
+    private int calculateBalancedCustomLevel(int maxLevel, int slotIndex, int requiredLevel, int power, Random rnd) {
         if (maxLevel <= 1) return 1;
 
         if (maxLevel == 2) {
@@ -891,7 +990,7 @@ public final class CustomEnchantingTableGUIListener implements Listener {
         };
     }
 
-    private Offer pickVanillaOffer(ItemStack item, int lapisCost, int requiredLevel, int slotIndex, int power, ThreadLocalRandom rnd) {
+    private Offer pickVanillaOffer(ItemStack item, int lapisCost, int requiredLevel, int slotIndex, int power, Random rnd) {
         boolean isBook = item.getType() == Material.BOOK;
 
         List<Enchantment> candidates = new ArrayList<>();
@@ -957,15 +1056,23 @@ public final class CustomEnchantingTableGUIListener implements Listener {
             }
         }
 
-        // Additional chance for a bonus custom enchant if primary was vanilla
-        if (!primaryOffer.isCustom && slotIndex >= 1 && rnd.nextInt(100) < bonusChance) {
-            Offer bonusCustom = pickCustomOffer(item, 1, 15, slotIndex - 1, power, rnd);
-            if (bonusCustom != null && bonusCustom.isCustom) {
-                CustomEnchant ce = enchantManager.getEnchant(bonusCustom.customId);
-                if (ce != null) {
-                    Map<CustomEnchant, Integer> map = new HashMap<>(enchantManager.getEnchantmentsOnItem(item));
-                    map.put(ce, bonusCustom.customLevel);
-                    enchantManager.setEnchantmentsOnItem(item, map);
+        // Additional chance for a bonus custom enchant if primary was vanilla.
+        // FIX: bonus custom enchants, just like offers, are allowed ONLY on tier III
+        // and only with the same tiny chance (previously ~5..20% from bookshelf bonus
+        // on tiers II and III made custom enchants way too common).
+        if (!primaryOffer.isCustom && slotIndex == 2) {
+            double tier3Chance = tableSettingsManager != null
+                    ? tableSettingsManager.calculateSlotCustomChance(2, power)
+                    : 3.0 + (power * 0.2);
+            if ((rnd.nextDouble() * 100.0) < tier3Chance) {
+                Offer bonusCustom = pickCustomOffer(item, 1, 15, rnd);
+                if (bonusCustom != null && bonusCustom.isCustom) {
+                    CustomEnchant ce = enchantManager.getEnchant(bonusCustom.customId);
+                    if (ce != null) {
+                        Map<CustomEnchant, Integer> map = new HashMap<>(enchantManager.getEnchantmentsOnItem(item));
+                        map.put(ce, bonusCustom.customLevel);
+                        enchantManager.setEnchantmentsOnItem(item, map);
+                    }
                 }
             }
         }

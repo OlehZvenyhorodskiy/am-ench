@@ -114,8 +114,12 @@ if (args[0].equalsIgnoreCase("giveitem")) {
         }
 
         if (args[0].equalsIgnoreCase("reload")) {
+            plugin.reloadConfig();
             plugin.getEnchantManager().reload();
             plugin.getCustomItemManager().reload();
+            if (plugin.getTableSettingsManager() != null) {
+                plugin.getTableSettingsManager().load();
+            }
             sender.sendMessage(ChatColor.GREEN + "AquaEnchats конфиги перезагружены.");
             return true;
         }
