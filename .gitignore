@@ -39,3 +39,6 @@ buildNumber.properties
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Release packages
+AquaEnchants_Package/
