@@ -123,10 +123,10 @@ public final class CustomEnchantingTableGUIListener implements Listener {
      */
     private long getEnchantSeed(Player p) {
         try {
-            long seed = p.getEnchantmentSeed();
-            if (seed == 0L) {
-                long fresh = ThreadLocalRandom.current().nextLong();
-                if (fresh == 0L) fresh = 1L;
+            int seed = p.getEnchantmentSeed();
+            if (seed == 0) {
+                int fresh = ThreadLocalRandom.current().nextInt();
+                if (fresh == 0) fresh = 1;
                 p.setEnchantmentSeed(fresh);
                 return fresh;
             }
@@ -142,8 +142,8 @@ public final class CustomEnchantingTableGUIListener implements Listener {
      */
     private void rerollEnchantSeed(Player p) {
         try {
-            long fresh = ThreadLocalRandom.current().nextLong();
-            if (fresh == 0L) fresh = 1L;
+            int fresh = ThreadLocalRandom.current().nextInt();
+            if (fresh == 0) fresh = 1;
             p.setEnchantmentSeed(fresh);
         } catch (Throwable ignored) {
         }
