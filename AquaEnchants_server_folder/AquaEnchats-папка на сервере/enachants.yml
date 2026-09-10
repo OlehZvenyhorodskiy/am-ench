@@ -965,8 +965,8 @@ trench:
   applies:
   - ALL_PICKAXE
   - ALL_SHOVEL
-  enchanttable: true
-  chans: 1
+  enchanttable: false
+  chans: 0
   enchantvilager: true
   break_block_delay_ticks: 1
   levels:

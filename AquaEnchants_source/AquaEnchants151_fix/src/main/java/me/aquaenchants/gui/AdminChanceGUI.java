@@ -416,47 +416,56 @@ public class AdminChanceGUI implements Listener {
         inv.setItem(6, adjustmentItem(Material.LIME_STAINED_GLASS_PANE, ChatColor.GREEN + "+1% к макс. бонусу", "+1"));
         inv.setItem(24, adjustmentItem(Material.RED_STAINED_GLASS_PANE, ChatColor.RED + "-1% от макс. бонуса", "-1"));
 
-        // Slot 1 Custom Chance - Slot 29
-        ItemStack s1Item = named(Material.IRON_SWORD, ChatColor.GREEN + "Базовый шанс кастомных чар (Слот I)");
+        // Slot 1 custom chance (устаревшее) - Slot 29
+        ItemStack s1Item = named(Material.BARRIER, ChatColor.GREEN + "Кастомные чары на Слоте I");
         ItemMeta s1Meta = s1Item.getItemMeta();
         if (s1Meta != null) {
             s1Meta.setLore(Arrays.asList(
-                    ChatColor.GRAY + "Базовый шанс выпадения кастомных чар на 1 слоте.",
-                    ChatColor.YELLOW + "Текущий шанс: " + ChatColor.GREEN + tableSettingsManager.getSlot1CustomChance() + "%",
-                    "",
-                    ChatColor.AQUA + "ЛКМ: +1% | ПКМ: -1%"
+                    ChatColor.RED + "Отключено: кастомные зачарования больше",
+                    ChatColor.RED + "не выпадают на 1-м тире стола.",
+                    ChatColor.GRAY + "Они выпадают только на 3-м (максимальном) тире",
+                    ChatColor.GRAY + "и только 1 уровня. Настройка — справа."
             ));
             s1Item.setItemMeta(s1Meta);
         }
         inv.setItem(29, s1Item);
 
-        // Slot 2 Custom Chance - Slot 31
-        ItemStack s2Item = named(Material.DIAMOND_SWORD, ChatColor.YELLOW + "Базовый шанс кастомных чар (Слот II)");
+        // Slot 2 custom chance (устаревшее) - Slot 31
+        ItemStack s2Item = named(Material.BARRIER, ChatColor.YELLOW + "Кастомные чары на Слоте II");
         ItemMeta s2Meta = s2Item.getItemMeta();
         if (s2Meta != null) {
             s2Meta.setLore(Arrays.asList(
-                    ChatColor.GRAY + "Базовый шанс выпадения кастомных чар на 2 слоте.",
-                    ChatColor.YELLOW + "Текущий шанс: " + ChatColor.GREEN + tableSettingsManager.getSlot2CustomChance() + "%",
-                    "",
-                    ChatColor.AQUA + "ЛКМ: +1% | ПКМ: -1%"
+                    ChatColor.RED + "Отключено: кастомные зачарования больше",
+                    ChatColor.RED + "не выпадают на 2-м тире стола.",
+                    ChatColor.GRAY + "Они выпадают только на 3-м (максимальном) тире",
+                    ChatColor.GRAY + "и только 1 уровня. Настройка — справа."
             ));
             s2Item.setItemMeta(s2Meta);
         }
         inv.setItem(31, s2Item);
 
-        // Slot 3 Custom Chance - Slot 33
-        ItemStack s3Item = named(Material.NETHERITE_SWORD, ChatColor.LIGHT_PURPLE + "Базовый шанс кастомных чар (Слот III)");
+        // Slot 3 custom chance - Slot 33 (единственный активный шанс кастомных чар)
+        ItemStack s3Item = named(Material.NETHERITE_SWORD, ChatColor.LIGHT_PURPLE + "Шанс кастомных чар (Слот III)");
         ItemMeta s3Meta = s3Item.getItemMeta();
         if (s3Meta != null) {
             s3Meta.setLore(Arrays.asList(
-                    ChatColor.GRAY + "Базовый шанс выпадения кастомных чар на 3 слоте.",
-                    ChatColor.YELLOW + "Текущий шанс: " + ChatColor.GREEN + tableSettingsManager.getSlot3CustomChance() + "%",
+                    ChatColor.GRAY + "Шанс выпадения кастомной чары на 3-м тире стола.",
+                    ChatColor.GRAY + "Бонус от книжных полок: до " + ChatColor.GREEN + "+3%" + ChatColor.GRAY + ".",
+                    ChatColor.GRAY + "На столе кастомные чары выпадают только 1 уровня.",
+                    ChatColor.YELLOW + "Текущий шанс: " + ChatColor.GREEN + formatChance(tableSettingsManager.getCustomTier3Chance()) + "%",
                     "",
-                    ChatColor.AQUA + "ЛКМ: +1% | ПКМ: -1%"
+                    ChatColor.AQUA + "ЛКМ: +1% | ПКМ: -1% | Shift+ЛКМ: +0.5% | Shift+ПКМ: -0.5%"
             ));
             s3Item.setItemMeta(s3Meta);
         }
         inv.setItem(33, s3Item);
+    }
+
+    private static String formatChance(double value) {
+        if (value == Math.rint(value)) {
+            return String.valueOf((long) Math.rint(value));
+        }
+        return String.format(java.util.Locale.US, "%.1f", value);
     }
 
     private ItemStack adjustmentItem(Material mat, String name, String delta) {
@@ -561,21 +570,17 @@ public class AdminChanceGUI implements Listener {
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 0.9f);
                     updateTableSettingsSlots(inv);
                 }
-                case 29 -> { // Slot 1 custom
-                    int delta = e.isRightClick() ? -1 : 1;
-                    tableSettingsManager.setSlot1CustomChance(tableSettingsManager.getSlot1CustomChance() + delta);
-                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1.2f);
+                case 29, 31 -> { // Кастомные чары на слотах I/II отключены (только III тир)
+                    player.sendMessage(ChatColor.YELLOW + "Кастомные зачарования выпадают только на 3-м тире стола и только 1 уровня.");
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 0.9f);
                     updateTableSettingsSlots(inv);
                 }
-                case 31 -> { // Slot 2 custom
-                    int delta = e.isRightClick() ? -1 : 1;
-                    tableSettingsManager.setSlot2CustomChance(tableSettingsManager.getSlot2CustomChance() + delta);
-                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1.2f);
-                    updateTableSettingsSlots(inv);
-                }
-                case 33 -> { // Slot 3 custom
-                    int delta = e.isRightClick() ? -1 : 1;
-                    tableSettingsManager.setSlot3CustomChance(tableSettingsManager.getSlot3CustomChance() + delta);
+                case 33 -> { // Slot 3 custom (единственный активный шанс)
+                    double delta = e.isRightClick() ? -1.0 : 1.0;
+                    if (e.isShiftClick()) {
+                        delta = e.isRightClick() ? -0.5 : 0.5;
+                    }
+                    tableSettingsManager.setCustomTier3Chance(tableSettingsManager.getCustomTier3Chance() + delta);
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1.2f);
                     updateTableSettingsSlots(inv);
                 }

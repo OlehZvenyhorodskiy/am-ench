@@ -85,3 +85,18 @@ firstenchant:
   - DROP_HEAD
   - LIPUCHKA
   - SHIELD
+# Настройки стола зачарований
+table_settings:
+  min_bonus_chance: 5
+  max_bonus_chance: 20
+  slot1_custom_chance: 10
+  slot2_custom_chance: 20
+  slot3_custom_chance: 30
+  # Шанс (%) выпадения кастомного зачарования на 3-м (максимальном) тире стола.
+  # На 1-м и 2-м тирах кастомные зачарования НЕ выпадают.
+  # На столе кастомные зачарования всегда 1 уровня.
+  custom_tier3_chance: 3
+  # Зачарования, которые НИКОГДА не выпадают на столе (даже при enchanttable: true).
+  # trench = "Экскаватор гномов" (копание 3x3).
+  table_disabled_ids:
+    - trench
