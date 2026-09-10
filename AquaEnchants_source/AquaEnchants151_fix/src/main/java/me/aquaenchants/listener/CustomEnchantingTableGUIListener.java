@@ -28,6 +28,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 
 import net.kyori.adventure.text.Component;
@@ -96,10 +98,18 @@ public final class CustomEnchantingTableGUIListener implements Listener {
     private final Map<UUID, Session> sessions = new HashMap<>();
     private BukkitTask animationTask;
 
+    /**
+     * PDC-флаг игрока: подсказка о нестандартной стоимости стола показана.
+     * (Для самого «зерна зачарования» PDC больше НЕ используется — там штатный
+     *  Player#getEnchantmentSeed/setEnchantmentSeed; PDC здесь — только UI-флаг.)
+     */
+    private final NamespacedKey keyTableCostHint;
+
     public CustomEnchantingTableGUIListener(AquaEnchatsPlugin plugin, EnchantManager enchantManager, me.aquaenchants.config.TableSettingsManager tableSettingsManager) {
         this.plugin = plugin;
         this.enchantManager = enchantManager;
         this.tableSettingsManager = tableSettingsManager;
+        this.keyTableCostHint = new NamespacedKey(plugin, "table_cost_hint");
         startAnimationTask();
     }
 
@@ -434,6 +444,26 @@ public final class CustomEnchantingTableGUIListener implements Listener {
         renderOffers(s, p);
         p.openInventory(inv);
         p.playSound(p.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.8f, 1.2f);
+        showCostHintOnce(p);
+    }
+
+    /**
+     * Подсказка при ПЕРВОМ использовании стола: у стола намеренно нестандартная
+     * стоимость (решение владельца) — списывается ВЕСЬ требуемый уровень опыта
+     * (до 30 на тире III + 3 лазурита), а не ванильные 1/2/3. Новым игрокам,
+     * привыкшим к ванили, это нужно объяснять один раз.
+     */
+    private void showCostHintOnce(Player p) {
+        try {
+            PersistentDataContainer pdc = p.getPersistentDataContainer();
+            Boolean shown = pdc.get(keyTableCostHint, PersistentDataType.BOOLEAN);
+            if (shown != null && shown) return;
+            pdc.set(keyTableCostHint, PersistentDataType.BOOLEAN, true);
+            p.sendMessage(ChatColor.YELLOW + "✦ Стол зачарований: "
+                    + ChatColor.GOLD + "зачарование стоит ВЕСЬ требуемый уровень опыта"
+                    + " (на тире III до 30 ур. + 3 лазурита), а не ванильные 1/2/3.");
+        } catch (Throwable ignored) {
+        }
     }
 
     private void fillInitialFrame(Inventory inv) {
