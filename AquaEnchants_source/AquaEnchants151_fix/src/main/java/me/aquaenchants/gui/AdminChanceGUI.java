@@ -450,7 +450,9 @@ public class AdminChanceGUI implements Listener {
         if (s3Meta != null) {
             s3Meta.setLore(Arrays.asList(
                     ChatColor.GRAY + "Шанс выпадения кастомной чары на 3-м тире стола.",
-                    ChatColor.GRAY + "Бонус от книжных полок: до " + ChatColor.GREEN + "+3%" + ChatColor.GRAY + ".",
+                    ChatColor.GRAY + "Бонус от книжных полок: до " + ChatColor.GREEN + "+3%" + ChatColor.GRAY + " (0.2% за полку).",
+                    ChatColor.GRAY + "0% в конфиге — полное отключение, полки",
+                    ChatColor.GRAY + "отключённые кастомные чары не включат.",
                     ChatColor.GRAY + "На столе кастомные чары выпадают только 1 уровня.",
                     ChatColor.YELLOW + "Текущий шанс: " + ChatColor.GREEN + formatChance(tableSettingsManager.getCustomTier3Chance()) + "%",
                     "",

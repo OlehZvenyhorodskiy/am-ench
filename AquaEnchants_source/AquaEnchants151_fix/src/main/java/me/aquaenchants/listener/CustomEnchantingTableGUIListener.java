@@ -28,8 +28,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 
 import net.kyori.adventure.text.Component;
@@ -98,30 +96,28 @@ public final class CustomEnchantingTableGUIListener implements Listener {
     private final Map<UUID, Session> sessions = new HashMap<>();
     private BukkitTask animationTask;
 
-    /**
-     * "Зерно зачарования" игрока — аналог ванильного enchantment seed.
-     * Хранится в PDC игрока (переживает перезаход) и меняется ТОЛЬКО после
-     * успешного зачарования. Пока зерно не изменилось, один и тот же предмет
-     * всегда показывает один и тот же список предложений — как в ванилле.
-     */
-    private final NamespacedKey keyEnchantSeed;
-
     public CustomEnchantingTableGUIListener(AquaEnchatsPlugin plugin, EnchantManager enchantManager, me.aquaenchants.config.TableSettingsManager tableSettingsManager) {
         this.plugin = plugin;
         this.enchantManager = enchantManager;
         this.tableSettingsManager = tableSettingsManager;
-        this.keyEnchantSeed = new NamespacedKey(plugin, "enchant_seed");
         startAnimationTask();
     }
 
+    /**
+     * "Зерно зачарования" игрока — штатный ванильный enchantment seed
+     * (Player#getEnchantmentSeed / Player#setEnchantmentSeed).
+     * Хранится в NBT игрока (переживает перезаход) и меняется ТОЛЬКО после
+     * успешного зачарования на нашем столе. Пока зерно не изменилось, один и
+     * тот же предмет всегда показывает один и тот же список предложений —
+     * как в ванилле.
+     */
     private long getEnchantSeed(Player p) {
         try {
-            PersistentDataContainer pdc = p.getPersistentDataContainer();
-            Long seed = pdc.get(keyEnchantSeed, PersistentDataType.LONG);
-            if (seed == null || seed == 0L) {
+            long seed = p.getEnchantmentSeed();
+            if (seed == 0L) {
                 long fresh = ThreadLocalRandom.current().nextLong();
                 if (fresh == 0L) fresh = 1L;
-                pdc.set(keyEnchantSeed, PersistentDataType.LONG, fresh);
+                p.setEnchantmentSeed(fresh);
                 return fresh;
             }
             return seed;
@@ -138,7 +134,7 @@ public final class CustomEnchantingTableGUIListener implements Listener {
         try {
             long fresh = ThreadLocalRandom.current().nextLong();
             if (fresh == 0L) fresh = 1L;
-            p.getPersistentDataContainer().set(keyEnchantSeed, PersistentDataType.LONG, fresh);
+            p.setEnchantmentSeed(fresh);
         } catch (Throwable ignored) {
         }
     }
@@ -196,6 +192,12 @@ public final class CustomEnchantingTableGUIListener implements Listener {
         Offer[] offers = new Offer[3];
         int animTick = 0;
         boolean inRitual = false;
+        /**
+         * Identity of the item at the moment the offers were generated.
+         * Used at click time to detect that the item was swapped after
+         * generation (stale offers must not be applied or paid for).
+         */
+        long offerItemIdentity = 0L;
 
         Session(UUID playerId, Location tableLoc, Inventory inv) {
             this.playerId = playerId;
@@ -238,6 +240,19 @@ public final class CustomEnchantingTableGUIListener implements Listener {
 
         static Offer custom(String displayName, String description, String group, int requiredLevel, int lapisCost, String id, int level) {
             return new Offer(displayName, description, group, requiredLevel, lapisCost, null, 0, id, level);
+        }
+
+        /**
+         * Пустое предложение: ни ванильной, ни кастомной чары нет
+         * («Нет доступных чар»). Такое предложение НЕактивно: клик по нему
+         * не списывает ресурсы и не меняет seed (см. onClick).
+         */
+        static Offer empty(int requiredLevel, int lapisCost) {
+            return new Offer(ChatColor.GRAY + "Нет доступных чар", null, null, requiredLevel, lapisCost, null, 0, null, 0);
+        }
+
+        boolean isEmpty() {
+            return vanillaEnchant == null && customId == null;
         }
     }
 
@@ -480,8 +495,28 @@ public final class CustomEnchantingTableGUIListener implements Listener {
             Offer offer = s.offers[idx];
             if (offer == null) return;
 
+            // FIX: пустое предложение («Нет доступных чар») — некликабельное.
+            // Неуспешная операция не списывает опыт/лазурит и не меняет seed
+            // (ранее за него можно было заплатить на любом тире, а книгу
+            // превращали в пустую зачарованную).
+            if (offer.isEmpty()) {
+                p.sendMessage(ChatColor.RED + "Нет доступных зачарований для этого предмета — слот неактивен.");
+                p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                Bukkit.getScheduler().runTask(plugin, () -> renderOffers(s, p));
+                return;
+            }
+
             ItemStack item = top.getItem(SLOT_ITEM);
             if (item == null || item.getType() == Material.AIR || !isEnchantable(item)) return;
+
+            // FIX: проверка актуальности предмета. Если предмет поменялся после
+            // генерации предложений (например, быстро подменён до следующего
+            // перерисовки), старые предложения к нему неприменимы — пересоздаём
+            // их БЕЗ какого-либо списания.
+            if (s.offerItemIdentity != 0L && s.offerItemIdentity != itemIdentity(item)) {
+                Bukkit.getScheduler().runTask(plugin, () -> renderOffers(s, p));
+                return;
+            }
 
             int lapis = countLapis(top.getItem(SLOT_LAPIS));
             if (lapis < offer.lapisCost) {
@@ -712,6 +747,7 @@ public final class CustomEnchantingTableGUIListener implements Listener {
         if (item == null || item.getType() == Material.AIR || !isEnchantable(item)) {
             clearOfferSlots(inv);
             s.offers = new Offer[3];
+            s.offerItemIdentity = 0L;
             return;
         }
 
@@ -723,7 +759,9 @@ public final class CustomEnchantingTableGUIListener implements Listener {
         // out and putting it back yields the SAME offers (as in vanilla). The list
         // changes only after an actual enchant (see rerollEnchantSeed) or for a
         // different item.
-        Random rnd = new Random(getEnchantSeed(p) ^ itemIdentity(item));
+        long identity = itemIdentity(item);
+        s.offerItemIdentity = identity;
+        Random rnd = new Random(getEnchantSeed(p) ^ identity);
         int base = rnd.nextInt(1, 9) + (power / 2) + rnd.nextInt(power + 1);
         int lvl1 = Math.max(1, base / 3);
         int lvl2 = Math.max(1, (base * 2) / 3 + 1);
@@ -760,6 +798,22 @@ public final class CustomEnchantingTableGUIListener implements Listener {
 
     private ItemStack offerItem(Offer offer, int tierNumber, int playerLevel, int playerLapis) {
         if (offer == null) return null;
+
+        if (offer.isEmpty()) {
+            ItemStack it = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+            ItemMeta meta = it.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName(ChatColor.GRAY + "Нет доступных чар");
+                meta.setLore(Arrays.asList(
+                        ChatColor.GRAY + "Для этого предмета не осталось",
+                        ChatColor.GRAY + "доступных зачарований.",
+                        ChatColor.DARK_GRAY + "----------------------------",
+                        ChatColor.DARK_GRAY + "Слот неактивен: клик ничего не списывает"
+                ));
+                it.setItemMeta(meta);
+            }
+            return it;
+        }
 
         Material icon = offer.isCustom ? Material.NETHER_STAR : Material.ENCHANTED_BOOK;
         ItemStack it = new ItemStack(icon);
@@ -821,6 +875,23 @@ public final class CustomEnchantingTableGUIListener implements Listener {
 
     private ItemStack statusItem(Offer offer, int tierNumber, int playerLevel, int playerLapis) {
         if (offer == null) return null;
+
+        if (offer.isEmpty()) {
+            ItemStack it = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+            ItemMeta meta = it.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName(ChatColor.RED + "✖ Нет доступных чар (Уровень " + tierNumber + ")");
+                meta.setLore(Arrays.asList(
+                        ChatColor.GRAY + "Предмет уже зачарован всем,",
+                        ChatColor.GRAY + "что ему подходит (или кастомный",
+                        ChatColor.GRAY + "бросок не удался).",
+                        ChatColor.DARK_GRAY + "Слот неактивен: клик ничего не списывает"
+                ));
+                it.setItemMeta(meta);
+            }
+            return it;
+        }
+
         boolean ready = playerLevel >= offer.requiredLevel && playerLapis >= offer.lapisCost;
 
         Material mat = ready ? Material.LIME_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE;
@@ -848,11 +919,18 @@ public final class CustomEnchantingTableGUIListener implements Listener {
     private Offer generateSlotOffer(ItemStack item, int lapisCost, int requiredLevel, int slotIndex, int power, Random rnd) {
         // Кастомные зачарования выпадают ТОЛЬКО на 3-м тире стола (slotIndex == 2)
         // и с очень маленьким шансом. На 1-м и 2-м тирах — всегда ваниль.
-        boolean customAllowedHere = slotIndex == 2;
-        double customRollThreshold = customAllowedHere
+        //
+        // FIX: у кастомной чары ровно ОДИН бросок вероятности (вторая, «бонусная»,
+        // попытка после ванильного предложения убрана). Убран безусловный
+        // «запасной» fallback, который при отсутствии ванильных чар предлагал
+        // кастомную гарантированно — минуя бросок вероятности и ломая требование
+        // редкости. 0% в конфиге теперь полностью отключает кастомные чары
+        // (бонус от книжных полок не «включает» отключённое — см.
+        // TableSettingsManager.calculateSlotCustomChance).
+        double customRollThreshold = slotIndex == 2
                 ? (tableSettingsManager != null
                     ? tableSettingsManager.calculateSlotCustomChance(slotIndex, power)
-                    : 3.0 + (power * 0.2))
+                    : 3.0)
                 : 0.0;
 
         boolean shouldTryCustom = customRollThreshold > 0 && (rnd.nextDouble() * 100.0) < customRollThreshold;
@@ -865,15 +943,10 @@ public final class CustomEnchantingTableGUIListener implements Listener {
         Offer vanilla = pickVanillaOffer(item, lapisCost, requiredLevel, slotIndex, power, rnd);
         if (vanilla != null) return vanilla;
 
-        // Запасной вариант: если на 3-м тире ванильных чар не осталось (например,
-        // предмет уже зачарован всем подходящим) — можно предложить кастомную чару.
-        // На 1-м/2-м тирах кастомных чар нет никогда.
-        if (customAllowedHere) {
-            Offer customFallback = pickCustomOffer(item, lapisCost, requiredLevel, rnd);
-            if (customFallback != null) return customFallback;
-        }
-
-        return Offer.vanilla(ChatColor.GRAY + "Нет доступных чар", requiredLevel, lapisCost, null, 0);
+        // Чары не остались (предмет уже зачарован всем подходящим и кастомный
+        // бросок не удался) — возвращаем ПУСТОЕ предложение. Оно отображается
+        // как неактивный слот: клик по нему ничего не списывает (см. onClick).
+        return Offer.empty(requiredLevel, lapisCost);
     }
 
     private Offer pickCustomOffer(ItemStack item, int lapisCost, int requiredLevel, Random rnd) {
@@ -1056,26 +1129,13 @@ public final class CustomEnchantingTableGUIListener implements Listener {
             }
         }
 
-        // Additional chance for a bonus custom enchant if primary was vanilla.
-        // FIX: bonus custom enchants, just like offers, are allowed ONLY on tier III
-        // and only with the same tiny chance (previously ~5..20% from bookshelf bonus
-        // on tiers II and III made custom enchants way too common).
-        if (!primaryOffer.isCustom && slotIndex == 2) {
-            double tier3Chance = tableSettingsManager != null
-                    ? tableSettingsManager.calculateSlotCustomChance(2, power)
-                    : 3.0 + (power * 0.2);
-            if ((rnd.nextDouble() * 100.0) < tier3Chance) {
-                Offer bonusCustom = pickCustomOffer(item, 1, 15, rnd);
-                if (bonusCustom != null && bonusCustom.isCustom) {
-                    CustomEnchant ce = enchantManager.getEnchant(bonusCustom.customId);
-                    if (ce != null) {
-                        Map<CustomEnchant, Integer> map = new HashMap<>(enchantManager.getEnchantmentsOnItem(item));
-                        map.put(ce, bonusCustom.customLevel);
-                        enchantManager.setEnchantmentsOnItem(item, map);
-                    }
-                }
-            }
-        }
+        // FIX: кастомные зачарования больше НЕ разыгрываются во втором,
+        // «бонусном», броске после ванильного основного предложения.
+        // Теперь у кастомной чары ровно ОДИН бросок вероятности — при генерации
+        // предложения 3-го тира (см. generateSlotOffer и
+        // TableSettingsManager.calculateSlotCustomChance). Это делает
+        // установленный в конфиге процент ИТОГОВЫМ, а 0% — полным отключением
+        // кастомных чар на столе.
     }
 
     private String prettifyKey(NamespacedKey key) {

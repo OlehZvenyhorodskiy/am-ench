@@ -28,8 +28,13 @@ public class TableSettingsManager {
     private int slot3CustomChance = 30;
 
     /**
-     * Шанс (в процентах) того, что на 3-м (максимальном) тире стола зачарований
-     * вместо ванильного зачарования будет предложено кастомное.
+     * Шанс (в процентах) того, что на 3-м (максимальном) тире стола
+     * зачарований вместо ванильного зачарования будет предложено кастомное.
+     * К книжным полкам прибавляется +0.2% за полку (до +3% при 15 полках),
+     * НО 0% в конфиге остаётся 0%: бонус от полок не «включает» кастомные
+     * чары, которые отключены админом.
+     * Ровно ОДИН бросок на зачарование (второго «бонусного» броска нет),
+     * безусловного fallback'а при отсутствии ванильных чар тоже.
      * Кастомные зачарования на столе выпадают ТОЛЬКО на 3-м тире и только 1 уровня.
      */
     private double customTier3Chance = 3.0;
@@ -105,13 +110,20 @@ public class TableSettingsManager {
     }
 
     /**
-     * Calculates the custom enchantment roll chance for a given slot index (0, 1, 2) and bookshelf power.
+     * Calculates the custom enchantment roll chance for a given slot index (0, 1, 2).
      *
      * Кастомные зачарования выпадают ТОЛЬКО на 3-м тире (slotIndex == 2) — на 1-м и 2-м
      * тире они появляться не должны вовсе (иначе игроки получают их почти бесплатно).
+     *
+     * Формула: custom_tier3_chance + 0.2% за книжную полку (до +3% при 15 полках).
+     * FIX: если в конфиге стоит 0% — результат всегда 0%: бонус от полок не
+     * «включает» отключённые кастомные чары (раньше 0% с 15 полками давало 3%).
      */
     public double calculateSlotCustomChance(int slotIndex, int bookshelves) {
         if (slotIndex != 2) {
+            return 0.0;
+        }
+        if (customTier3Chance <= 0.0) {
             return 0.0;
         }
         int power = Math.max(0, Math.min(15, bookshelves));

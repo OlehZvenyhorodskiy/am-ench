@@ -12,10 +12,9 @@
     <description>Custom configurable enchantments plugin</description>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <server.dir>C:/mc_server</server.dir>
+        <!-- Paper 1.21.8 требует Java 21 -->
+        <maven.compiler.release>21</maven.compiler.release>
     </properties>
 
     <repositories>
@@ -24,103 +23,144 @@
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
         <repository>
-            <id>sonatype</id>
-            <url>https://oss.sonatype.org/content/groups/public/</url>
-        </repository>
-        <repository>
             <id>enginehub</id>
             <url>https://maven.enginehub.org/repo/</url>
         </repository>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
     </repositories>
 
+    <!--
+        DEPENDENCIES (default build):
+        Все зависимости берутся из публичных Maven-репозиториев —
+        `mvn package` работает на ЛЮБОЙ машине с доступом в интернет,
+        без локальных JAR и без пути C:/mc_server.
+
+        Для офлайн-сборки против JAR из собственной папки сервера
+        используйте профиль:  mvn package -Plocal-server-jars
+        (пути задаются свойством -Dserver.dir=/путь/к/mc_server)
+    -->
     <dependencies>
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
             <version>1.21.8-R0.1-SNAPSHOT</version>
-            <scope>system</scope>
-            <systemPath>${server.dir}/libraries/io/papermc/paper/paper-api/1.21.8-R0.1-SNAPSHOT/paper-api-1.21.8-R0.1-SNAPSHOT.jar</systemPath>
+            <scope>provided</scope>
         </dependency>
 
+        <!-- WorldGuard (используется в WorldGuardHook) -->
         <dependency>
-            <groupId>net.kyori</groupId>
-            <artifactId>adventure-api</artifactId>
-            <version>4.24.0</version>
-            <scope>system</scope>
-            <systemPath>${server.dir}/libraries/net/kyori/adventure-api/4.24.0/adventure-api-4.24.0.jar</systemPath>
+            <groupId>com.sk89q.worldguard</groupId>
+            <artifactId>worldguard-bukkit</artifactId>
+            <version>7.0.14-dist</version>
+            <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>net.kyori</groupId>
-            <artifactId>adventure-key</artifactId>
-            <version>4.24.0</version>
-            <scope>system</scope>
-            <systemPath>${server.dir}/libraries/net/kyori/adventure-key/4.24.0/adventure-key-4.24.0.jar</systemPath>
-        </dependency>
-
-        <dependency>
-            <groupId>net.kyori</groupId>
-            <artifactId>examination-api</artifactId>
-            <version>1.3.0</version>
-            <scope>system</scope>
-            <systemPath>${server.dir}/libraries/net/kyori/examination-api/1.3.0/examination-api-1.3.0.jar</systemPath>
-        </dependency>
-
-        <dependency>
-            <groupId>net.kyori</groupId>
-            <artifactId>adventure-text-serializer-plain</artifactId>
-            <version>4.24.0</version>
-            <scope>system</scope>
-            <systemPath>${server.dir}/libraries/net/kyori/adventure-text-serializer-plain/4.24.0/adventure-text-serializer-plain-4.24.0.jar</systemPath>
-        </dependency>
-
-        <dependency>
-            <groupId>net.kyori</groupId>
-            <artifactId>adventure-text-serializer-legacy</artifactId>
-            <version>4.24.0</version>
-            <scope>system</scope>
-            <systemPath>${server.dir}/libraries/net/kyori/adventure-text-serializer-legacy/4.24.0/adventure-text-serializer-legacy-4.24.0.jar</systemPath>
-        </dependency>
-
-        <dependency>
-            <groupId>net.md-5</groupId>
-            <artifactId>bungeecord-chat</artifactId>
-            <version>1.21-R0.2</version>
-            <scope>system</scope>
-            <systemPath>${server.dir}/libraries/net/md-5/bungeecord-chat/1.21-R0.2-deprecated+build.21/bungeecord-chat-1.21-R0.2-deprecated+build.21.jar</systemPath>
-        </dependency>
-
-        <!-- Vault API from server plugins -->
-        <dependency>
-            <groupId>net.milkbowl.vault</groupId>
-            <artifactId>VaultAPI</artifactId>
-            <version>1.7</version>
-            <scope>system</scope>
-            <systemPath>${server.dir}/plugins/Vault.jar</systemPath>
-        </dependency>
-
-        <!-- WorldEdit from server plugins -->
+        <!-- WorldEdit (BukkitAdapter; нужен и WorldGuard) -->
         <dependency>
             <groupId>com.sk89q.worldedit</groupId>
             <artifactId>worldedit-bukkit</artifactId>
             <version>7.3.18</version>
-            <scope>system</scope>
-            <systemPath>${server.dir}/plugins/worldedit-bukkit-7.3.18.jar</systemPath>
-        </dependency>
-
-        <!-- WorldGuard from server plugins -->
-        <dependency>
-            <groupId>com.sk89q.worldguard</groupId>
-            <artifactId>worldguard-bukkit</artifactId>
-            <version>7.0.14</version>
-            <scope>system</scope>
-            <systemPath>${server.dir}/plugins/worldguard-bukkit-7.0.14-dist.jar</systemPath>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <!--
+            ОФЛАЙН-сборка против JAR из папки сервера (как раньше).
+            Запуск:  mvn package -Plocal-server-jars
+            (по умолчанию ищется C:/mc_server; можно передать -Dserver.dir=D:/mc_server)
+        -->
+        <profile>
+            <id>local-server-jars</id>
+            <properties>
+                <server.dir>C:/mc_server</server.dir>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>io.papermc.paper</groupId>
+                    <artifactId>paper-api</artifactId>
+                    <version>1.21.8-R0.1-SNAPSHOT</version>
+                    <scope>system</scope>
+                    <systemPath>${server.dir}/libraries/io/papermc/paper/paper-api/1.21.8-R0.1-SNAPSHOT/paper-api-1.21.8-R0.1-SNAPSHOT.jar</systemPath>
+                </dependency>
+
+                <dependency>
+                    <groupId>net.kyori</groupId>
+                    <artifactId>adventure-api</artifactId>
+                    <version>4.24.0</version>
+                    <scope>system</scope>
+                    <systemPath>${server.dir}/libraries/net/kyori/adventure-api/4.24.0/adventure-api-4.24.0.jar</systemPath>
+                </dependency>
+
+                <dependency>
+                    <groupId>net.kyori</groupId>
+                    <artifactId>adventure-key</artifactId>
+                    <version>4.24.0</version>
+                    <scope>system</scope>
+                    <systemPath>${server.dir}/libraries/net/kyori/adventure-key/4.24.0/adventure-key-4.24.0.jar</systemPath>
+                </dependency>
+
+                <dependency>
+                    <groupId>net.kyori</groupId>
+                    <artifactId>examination-api</artifactId>
+                    <version>1.3.0</version>
+                    <scope>system</scope>
+                    <systemPath>${server.dir}/libraries/net/kyori/examination-api/1.3.0/examination-api-1.3.0.jar</systemPath>
+                </dependency>
+
+                <dependency>
+                    <groupId>net.kyori</groupId>
+                    <artifactId>adventure-text-serializer-plain</artifactId>
+                    <version>4.24.0</version>
+                    <scope>system</scope>
+                    <systemPath>${server.dir}/libraries/net/kyori/adventure-text-serializer-plain/4.24.0/adventure-text-serializer-plain-4.24.0.jar</systemPath>
+                </dependency>
+
+                <dependency>
+                    <groupId>net.kyori</groupId>
+                    <artifactId>adventure-text-serializer-legacy</artifactId>
+                    <version>4.24.0</version>
+                    <scope>system</scope>
+                    <systemPath>${server.dir}/libraries/net/kyori/adventure-text-serializer-legacy/4.24.0/adventure-text-serializer-legacy-4.24.0.jar</systemPath>
+                </dependency>
+
+                <dependency>
+                    <groupId>net.md-5</groupId>
+                    <artifactId>bungeecord-chat</artifactId>
+                    <version>1.21-R0.2</version>
+                    <scope>system</scope>
+                    <systemPath>${server.dir}/libraries/net/md-5/bungeecord-chat/1.21-R0.2-deprecated+build.21/bungeecord-chat-1.21-R0.2-deprecated+build.21.jar</systemPath>
+                </dependency>
+
+                <!-- Vault API from server plugins (не используется в исходниках,
+                     оставлен для совместимости с прежней офлайн-сборкой) -->
+                <dependency>
+                    <groupId>net.milkbowl.vault</groupId>
+                    <artifactId>VaultAPI</artifactId>
+                    <version>1.7</version>
+                    <scope>system</scope>
+                    <systemPath>${server.dir}/plugins/Vault.jar</systemPath>
+                </dependency>
+
+                <!-- WorldEdit from server plugins -->
+                <dependency>
+                    <groupId>com.sk89q.worldedit</groupId>
+                    <artifactId>worldedit-bukkit</artifactId>
+                    <version>7.3.18</version>
+                    <scope>system</scope>
+                    <systemPath>${server.dir}/plugins/worldedit-bukkit-7.3.18.jar</systemPath>
+                </dependency>
+
+                <!-- WorldGuard from server plugins -->
+                <dependency>
+                    <groupId>com.sk89q.worldguard</groupId>
+                    <artifactId>worldguard-bukkit</artifactId>
+                    <version>7.0.14</version>
+                    <scope>system</scope>
+                    <systemPath>${server.dir}/plugins/worldguard-bukkit-7.0.14-dist.jar</systemPath>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
     <build>
         <plugins>
@@ -128,10 +168,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
-                <configuration>
-                    <source>17</source>
-                    <target>17</target>
-                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.1</version>
             </plugin>
         </plugins>
     </build>
