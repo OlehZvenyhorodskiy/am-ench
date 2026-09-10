@@ -220,8 +220,27 @@ public class AquaEnchatsPlugin extends JavaPlugin {
             }
         } catch (Throwable ignored) {}
 
-		// Периодическое обновление переливающегося лора для предметов с кастомными энчантами (2 тика = ультра-плавная анимация)
+		// Однократная нормализация лора предметов онлайн-игроков при старте/перезагрузке
+		try {
+			for (var p : Bukkit.getOnlinePlayers()) {
+				if (p == null || !p.isOnline()) continue;
+				for (var it : p.getInventory().getContents()) {
+					if (it != null && !it.getType().isAir()) enchantManager.refreshLoreIfCustom(it);
+				}
+				for (var it : p.getInventory().getArmorContents()) {
+					if (it != null && !it.getType().isAir()) enchantManager.refreshLoreIfCustom(it);
+				}
+				var offHand = p.getInventory().getItemInOffHand();
+				if (offHand != null && !offHand.getType().isAir()) enchantManager.refreshLoreIfCustom(offHand);
+			}
+		} catch (Throwable ignored) {}
+
+		// Периодическое обновление лора запускается ТОЛЬКО если в настройках включено lore_animation.
+		// По умолчанию ВЫКЛЮЧЕНО, чтобы исключить постоянное дёргание оружия в руке из-за пакетов экипировки.
 		Bukkit.getScheduler().runTaskTimer(this, () -> {
+			if (!me.aquaenchants.util.LoreAnimationManager.isAnimationEnabled()) {
+				return;
+			}
 			try {
 				me.aquaenchants.util.LoreAnimationManager.incrementTick();
 				for (var p : Bukkit.getOnlinePlayers()) {
@@ -245,7 +264,7 @@ public class AquaEnchatsPlugin extends JavaPlugin {
 					}
 				}
 			} catch (Throwable ignored) {}
-		}, 2L, 2L);
+		}, 10L, 10L);
 
         getLogger().info("AquaEnchats enabled. Loaded " + enchantManager.getAll().size() + " custom enchantments.");
     }

@@ -100,3 +100,6 @@ table_settings:
   # trench = "Экскаватор гномов" (копание 3x3).
   table_disabled_ids:
     - trench
+  # Переливание названий кастомных зачарований в лоре (shimmer wave).
+  # ВЫКЛЮЧЕНО (false), чтобы оружие не дёргалось в руке из-за частых обновлений пакетов.
+  lore_animation: false

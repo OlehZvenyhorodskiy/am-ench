@@ -416,6 +416,32 @@ public class AdminChanceGUI implements Listener {
         inv.setItem(6, adjustmentItem(Material.LIME_STAINED_GLASS_PANE, ChatColor.GREEN + "+1% к макс. бонусу", "+1"));
         inv.setItem(24, adjustmentItem(Material.RED_STAINED_GLASS_PANE, ChatColor.RED + "-1% от макс. бонуса", "-1"));
 
+        // Lore shimmer toggle - Slot 13
+        boolean anim = tableSettingsManager.isLoreAnimation();
+        ItemStack animItem = named(anim ? Material.LIME_DYE : Material.GRAY_DYE,
+                anim ? ChatColor.GREEN + "✦ Переливание лора: ВКЛЮЧЕНО" : ChatColor.RED + "✦ Переливание лора: ВЫКЛЮЧЕНО");
+        ItemMeta animMeta = animItem.getItemMeta();
+        if (animMeta != null) {
+            if (anim) {
+                animMeta.setLore(Arrays.asList(
+                        ChatColor.GRAY + "Плавное переливание цветов в названиях кастомных чар.",
+                        ChatColor.RED + "⚠ Внимание: вызывает подёргивание оружия в руке!",
+                        "",
+                        ChatColor.YELLOW + "▸ Нажмите для ВЫКЛЮЧЕНИЯ (рекомендуется)"
+                ));
+            } else {
+                animMeta.setLore(Arrays.asList(
+                        ChatColor.GRAY + "Плавное переливание цветов в названиях кастомных чар.",
+                        ChatColor.GREEN + "✔ Выключено: оружие и инструменты не дёргаются в руке.",
+                        ChatColor.GRAY + "Названия зачарований отображаются стабильными цветами.",
+                        "",
+                        ChatColor.YELLOW + "▸ Нажмите для включения"
+                ));
+            }
+            animItem.setItemMeta(animMeta);
+        }
+        inv.setItem(13, animItem);
+
         // Slot 1 custom chance (устаревшее) - Slot 29
         ItemStack s1Item = named(Material.BARRIER, ChatColor.GREEN + "Кастомные чары на Слоте I");
         ItemMeta s1Meta = s1Item.getItemMeta();
@@ -570,6 +596,13 @@ public class AdminChanceGUI implements Listener {
                 case 24 -> { // -1% max
                     tableSettingsManager.setMaxBonusChance(tableSettingsManager.getMaxBonusChance() - 1);
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 0.9f);
+                    updateTableSettingsSlots(inv);
+                }
+                case 13 -> { // Toggle lore shimmer animation
+                    boolean cur = tableSettingsManager.isLoreAnimation();
+                    tableSettingsManager.setLoreAnimation(!cur);
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.7f, cur ? 0.8f : 1.2f);
+                    player.sendMessage(ChatColor.GOLD + "✦ Переливание лора: " + (!cur ? ChatColor.GREEN + "ВКЛЮЧЕНО" : ChatColor.RED + "ВЫКЛЮЧЕНО (оружие стабильно в руке)"));
                     updateTableSettingsSlots(inv);
                 }
                 case 29, 31 -> { // Кастомные чары на слотах I/II отключены (только III тир)

@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class LoreAnimationManager {
 
     private static int globalTick = 0;
+    private static volatile boolean animationEnabled = false;
 
     private static final Map<String, List<ColoredChar>> parsedDisplayCache = new ConcurrentHashMap<>();
 
@@ -28,6 +29,14 @@ public final class LoreAnimationManager {
 
     private LoreAnimationManager() {}
 
+    public static boolean isAnimationEnabled() {
+        return animationEnabled;
+    }
+
+    public static void setAnimationEnabled(boolean enabled) {
+        animationEnabled = enabled;
+    }
+
     public static int getGlobalTick() {
         return globalTick;
     }
@@ -41,6 +50,7 @@ public final class LoreAnimationManager {
      */
     public static String formatAnimatedOriginal(String rawDisplay, int tick) {
         if (rawDisplay == null || rawDisplay.isEmpty()) return "";
+        if (!animationEnabled) return rawDisplay;
 
         List<ColoredChar> list = parsedDisplayCache.computeIfAbsent(rawDisplay, LoreAnimationManager::parseRawDisplay);
         if (list.isEmpty()) return rawDisplay;

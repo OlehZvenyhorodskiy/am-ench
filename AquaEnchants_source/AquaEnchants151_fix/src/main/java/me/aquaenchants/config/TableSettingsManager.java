@@ -40,6 +40,13 @@ public class TableSettingsManager {
     private double customTier3Chance = 3.0;
 
     /**
+     * Переливание названий зачарований (shimmer animation).
+     * По умолчанию ВЫКЛЮЧЕНО (false), так как частое обновление предметов в руке
+     * вызывает эффект дёргания/переэкипировки оружия в клиенте Minecraft.
+     */
+    private boolean loreAnimation = false;
+
+    /**
      * Зачарования, которые НИКОГДА не выпадают на столе зачарований
      * (даже если в enachants.yml у них стоит enchanttable: true).
      * По умолчанию — "trench" (Экскаватор гномов, копание 3x3).
@@ -60,6 +67,8 @@ public class TableSettingsManager {
             this.slot2CustomChance = config.getInt("table_settings.slot2_custom_chance", 20);
             this.slot3CustomChance = config.getInt("table_settings.slot3_custom_chance", 30);
             this.customTier3Chance = clampPercent(config.getDouble("table_settings.custom_tier3_chance", 3.0));
+            this.loreAnimation = config.getBoolean("table_settings.lore_animation", false);
+            me.aquaenchants.util.LoreAnimationManager.setAnimationEnabled(this.loreAnimation);
 
             tableDisabledIds.clear();
             List<String> ids = config.getStringList("table_settings.table_disabled_ids");
@@ -88,6 +97,7 @@ public class TableSettingsManager {
             config.set("table_settings.slot2_custom_chance", slot2CustomChance);
             config.set("table_settings.slot3_custom_chance", slot3CustomChance);
             config.set("table_settings.custom_tier3_chance", customTier3Chance);
+            config.set("table_settings.lore_animation", loreAnimation);
             config.set("table_settings.table_disabled_ids", new ArrayList<>(tableDisabledIds));
             plugin.saveConfig();
         } catch (Exception e) {
@@ -218,5 +228,14 @@ public class TableSettingsManager {
     @Deprecated
     public void setSlot3CustomChance(int slot3CustomChance) {
         this.slot3CustomChance = Math.max(0, Math.min(100, slot3CustomChance));
+    }
+
+    public boolean isLoreAnimation() {
+        return loreAnimation;
+    }
+
+    public void setLoreAnimation(boolean loreAnimation) {
+        this.loreAnimation = loreAnimation;
+        me.aquaenchants.util.LoreAnimationManager.setAnimationEnabled(loreAnimation);
     }
 }
