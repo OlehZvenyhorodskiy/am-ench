@@ -49,9 +49,88 @@ public class AquaEnchantTabCompleter implements TabCompleter {
             addIfStartsWith(result, "menu", prefix);
             addIfStartsWith(result, "admin", prefix);
             addIfStartsWith(result, "give", prefix);
+            addIfStartsWith(result, "enchant", prefix);
+            addIfStartsWith(result, "cast", prefix);
+            addIfStartsWith(result, "charge", prefix);
             addIfStartsWith(result, "giveitem", prefix);
             addIfStartsWith(result, "reload", prefix);
             addIfStartsWith(result, "help", prefix);
+            return result;
+        }
+
+        // /aquaenchant cast <enchant> [energy] [player]
+        if (args[0].equalsIgnoreCase("cast") || args[0].equalsIgnoreCase("charge")) {
+            if (args.length == 2) {
+                String prefix = args[1].toLowerCase(Locale.ROOT);
+                for (String ench : new String[]{"iceshtorm"}) {
+                    if (ench.startsWith(prefix)) result.add(ench);
+                }
+                return result;
+            }
+            if (args.length == 3) {
+                String prefix = args[2];
+                for (String v : new String[]{"1", "2", "3", "4", "5"}) {
+                    if (v.startsWith(prefix)) result.add(v);
+                }
+                return result;
+            }
+            if (args.length == 4) {
+                String prefix = args[3].toLowerCase(Locale.ROOT);
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (p.getName().toLowerCase(Locale.ROOT).startsWith(prefix)) {
+                        result.add(p.getName());
+                    }
+                }
+                return result;
+            }
+            return result;
+        }
+
+        // /aquaenchant enchant <enchant> <level> [player]
+        if (args[0].equalsIgnoreCase("enchant")) {
+            if (args.length == 2) {
+                String prefix = args[1].toLowerCase(Locale.ROOT);
+                Collection<CustomEnchant> enchants = enchantManager.getAll();
+                for (CustomEnchant ench : enchants) {
+                    String id = ench.getId().toLowerCase(Locale.ROOT);
+                    if (id.startsWith(prefix)) {
+                        result.add(id);
+                    }
+                }
+                return result;
+            }
+
+            if (args.length == 3) {
+                String prefix = args[2];
+                CustomEnchant ench = enchantManager.getEnchant(args[1]);
+                if (ench != null && ench.getLevels() != null) {
+                    List<Integer> levels = ench.getLevels().keySet().stream().sorted().collect(Collectors.toList());
+                    for (Integer lvl : levels) {
+                        String s = String.valueOf(lvl);
+                        if (s.startsWith(prefix)) {
+                            result.add(s);
+                        }
+                    }
+                } else {
+                    for (String v : new String[] {"1", "2", "3", "4", "5"}) {
+                        if (v.startsWith(prefix)) {
+                            result.add(v);
+                        }
+                    }
+                }
+                return result;
+            }
+
+            if (args.length == 4) {
+                String prefix = args[3].toLowerCase(Locale.ROOT);
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    String name = p.getName();
+                    if (name.toLowerCase(Locale.ROOT).startsWith(prefix)) {
+                        result.add(name);
+                    }
+                }
+                return result;
+            }
             return result;
         }
 

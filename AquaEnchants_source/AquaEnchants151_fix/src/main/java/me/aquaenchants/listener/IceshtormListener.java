@@ -7,9 +7,11 @@ import me.aquaenchants.enchant.EnchantLevel;
 import me.aquaenchants.enchant.EnchantManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.BarColor;
@@ -41,25 +43,25 @@ import java.util.*;
  * 
  * Механика:
  * 1. ПКМ + удержание → начало зарядки энергии (снятие опыта)
- * 2. Над кастером растущее кольцо из снежных партиклов
- * 3. Цели в радиусе обездвижены (замедление 255)
- * 4. Через 40 тиков → белые партиклы на целях
- * 5. Каждые 5 тиков → спавн блоков льда над кастером
- * 6. При полной зарядке → слепота на цели
- * 7. Блоки льда летят к целям → урон при касании
- * 8. Через 5 тиков → усиленная молния по целям
- * 9. Если ПКМ удерживается → повтор цикла
+ * 2. Вокруг кастера образуется вращающаяся двойная спираль метели и ледяная мандала
+ * 3. По мере накопления энергии вокруг кастера материализуются и вращаются ледяные кристаллы
+ * 4. Цели в радиусе покрываются льдом и инеем
+ * 5. При полной зарядке → ударная волна холода, ледяные кристаллы запускаются в цели как снаряды
+ * 6. При попадании снарядов → взрыв ледяной новы (Frost Nova) с осколками синего льда
+ * 7. Финал → небесный ледяной луч и громовой морозный шторм
  */
 public class IceshtormListener implements Listener {
 
     private static final String ENCHANT_ID = "iceshtorm";
+    private static final Particle.DustOptions DUST_CYAN = new Particle.DustOptions(Color.fromRGB(130, 220, 255), 1.2f);
+    private static final Particle.DustOptions DUST_ICE_WHITE = new Particle.DustOptions(Color.fromRGB(220, 245, 255), 1.0f);
 
     private final AquaEnchatsPlugin plugin;
     private final EnchantManager enchantManager;
 
     // Отслеживание удержания ПКМ
     private final Map<UUID, Long> rightClickHeld = new HashMap<>();
-    private static final long HOLD_TIMEOUT = 300L; // 300мс = 6 тиков (увеличен для стабильности)
+    private static final long HOLD_TIMEOUT = 750L; // 750мс для надёжного непрерывного удержания ПКМ
     private static final long CLICK_COOLDOWN = 50L; // Минимум 50мс между обработкой кликов
     private static final long START_GRACE_PERIOD = 200L; // 200мс после старта не проверяем отпускание
     
@@ -169,7 +171,7 @@ public class IceshtormListener implements Listener {
         // Проверяем всех игроков с активной зарядкой
         for (UUID playerId : new HashSet<>(activeCharges.keySet())) {
             ChargingData charging = activeCharges.get(playerId);
-            if (charging == null) continue;
+            if (charging == null || charging.directTest) continue;
             
             // Даём "период прощения" после старта зарядки
             if (now - charging.startTime < START_GRACE_PERIOD) {
@@ -183,8 +185,13 @@ public class IceshtormListener implements Listener {
                 Player player = Bukkit.getPlayer(playerId);
                 if (player != null) {
                     plugin.debug("[Iceshtorm] Player released RMB: " + player.getName() 
-                        + ", lastClick=" + (lastClick != null ? (now - lastClick) + "ms ago" : "null"));
-                    stopCharging(player, true);
+                        + ", lastClick=" + (lastClick != null ? (now - lastClick) + "ms ago" : "null")
+                        + ", energy=" + charging.energy);
+                    if (charging.energy > 0) {
+                        castIceshtorm(player, charging);
+                    } else {
+                        stopCharging(player, true);
+                    }
                 }
             }
         }
@@ -241,15 +248,17 @@ public class IceshtormListener implements Listener {
 
                 Location loc = fb.getLocation();
 
-                // Небольшие снежные партиклы вокруг блока для видимости траектории
+                // Красивый морозный вихревой шлейф за летящим ледяным снарядом
                 try {
-                    fb.getWorld().spawnParticle(Particle.SNOWFLAKE, loc.clone().add(0, 0.5, 0),
-                            3, 0.15, 0.15, 0.15, 0.01);
+                    Location trailLoc = loc.clone().add(0, 0.4, 0);
+                    fb.getWorld().spawnParticle(Particle.SNOWFLAKE, trailLoc, 4, 0.18, 0.18, 0.18, 0.02);
+                    fb.getWorld().spawnParticle(Particle.DUST, trailLoc, 3, 0.12, 0.12, 0.12, 0, DUST_CYAN);
+                    fb.getWorld().spawnParticle(Particle.END_ROD, trailLoc, 1, 0.05, 0.05, 0.05, 0.01);
                 } catch (Throwable ignored) {}
 
                 // Проверка попадания по целям
                 LivingEntity closest = null;
-                double minDist = 1.2;
+                double minDist = 1.3;
                 for (LivingEntity target : data.targets) {
                     if (!target.isValid() || target.isDead()) continue;
                     double dist = target.getLocation().distance(loc);
@@ -260,17 +269,7 @@ public class IceshtormListener implements Listener {
                 }
 
                 if (closest != null) {
-                    // Урон как у зомби
-                    try {
-                        closest.damage(3.0, data.caster);
-                    } catch (Throwable ignored) {
-                        closest.damage(3.0);
-                    }
-
-                    closest.getWorld().spawnParticle(Particle.CLOUD,
-                            closest.getLocation().add(0, 1, 0),
-                            15, 0.3, 0.3, 0.3, 0.05);
-
+                    playFrostNovaShatter(loc.clone().add(0, 0.5, 0), closest, data.caster);
                     plugin.debug("[Iceshtorm] Ice block hit " + closest.getName());
 
                     fb.remove();
@@ -280,6 +279,7 @@ public class IceshtormListener implements Listener {
 
                 // Ограничение жизни блока, чтобы он не летал бесконечно
                 if (data.ticksLived > 40) {
+                    playFrostNovaShatter(loc.clone().add(0, 0.4, 0), null, data.caster);
                     fb.remove();
                     it.remove();
                 }
@@ -316,7 +316,7 @@ public class IceshtormListener implements Listener {
                 if (state.idleTicks >= 2) {
                     Player caster = Bukkit.getPlayer(casterId);
                     if (caster != null && caster.isOnline()) {
-                        strikeTargetsWithLightning(caster, state.targets);
+                        strikeTargetsWithLightning(caster, state.targets, state.fallbackLoc);
                     }
                     it.remove();
                 }
@@ -324,25 +324,23 @@ public class IceshtormListener implements Listener {
         }
     }
 
-
-@EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onIceBlockLand(EntityChangeBlockEvent event) {
         if (!(event.getEntity() instanceof FallingBlock)) return;
-        
+
         FallingBlock fb = (FallingBlock) event.getEntity();
         UUID fbId = fb.getUniqueId();
-        
+
         IceBlockData data = iceBlocks.remove(fbId);
         if (data == null) return;
-        
-        event.setCancelled(true); // Блок не должен упасть
+
+        event.setCancelled(true); // Блок не должен упасть в мир
         fb.remove();
-        
-        // Урон ближайшей цели
+
         Location loc = fb.getLocation();
         LivingEntity closest = null;
         double minDist = 2.0;
-        
+
         for (LivingEntity target : data.targets) {
             if (!target.isValid() || target.isDead()) continue;
             double dist = target.getLocation().distance(loc);
@@ -351,19 +349,46 @@ public class IceshtormListener implements Listener {
                 closest = target;
             }
         }
-        
-        if (closest != null) {
-            // Урон как у зомби (3.0)
+
+        playFrostNovaShatter(loc.clone().add(0, 0.4, 0), closest, data.caster);
+    }
+
+    /**
+     * Эффект Frost Nova: мощный взрыв льда с осколками синего и плотного льда,
+     * вспышкой и звоном разбивающегося хрусталя.
+     */
+    private void playFrostNovaShatter(Location loc, LivingEntity target, Player caster) {
+        World world = loc.getWorld();
+        if (world == null) return;
+
+        try {
+            BlockData blueIce = Material.BLUE_ICE.createBlockData();
+            BlockData packedIce = Material.PACKED_ICE.createBlockData();
+            world.spawnParticle(Particle.BLOCK, loc, 45, 0.35, 0.35, 0.35, 0.15, blueIce);
+            world.spawnParticle(Particle.BLOCK, loc, 30, 0.3, 0.3, 0.3, 0.12, packedIce);
+            world.spawnParticle(Particle.SNOWFLAKE, loc, 35, 0.5, 0.5, 0.5, 0.08);
+            world.spawnParticle(Particle.FLASH, loc, 1, 0, 0, 0, 0);
+        } catch (Throwable ignored) {}
+
+        try {
+            world.playSound(loc, Sound.BLOCK_GLASS_BREAK, 1.6f, 0.75f);
+            world.playSound(loc, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.4f, 0.8f);
+            world.playSound(loc, Sound.ENTITY_ZOMBIE_VILLAGER_CONVERTED, 0.9f, 1.6f);
+        } catch (Throwable ignored) {}
+
+        if (target != null && target.isValid() && !target.isDead()) {
             try {
-                closest.damage(3.0, data.caster);
+                if (caster != null) {
+                    target.damage(3.5, caster);
+                } else {
+                    target.damage(3.5);
+                }
             } catch (Throwable ignored) {
-                closest.damage(3.0);
+                target.damage(3.5);
             }
-            
-            // Эффект удара
-            closest.getWorld().spawnParticle(Particle.CLOUD, closest.getLocation().add(0, 1, 0), 15, 0.3, 0.3, 0.3, 0.05);
-            
-            plugin.debug("[Iceshtorm] Ice block hit " + closest.getName());
+            try {
+                target.setFreezeTicks(Math.max(target.getFreezeTicks(), 200));
+            } catch (Throwable ignored) {}
         }
     }
 
@@ -417,15 +442,15 @@ public class IceshtormListener implements Listener {
     private void tickCharging(Player player) {
         UUID pid = player.getUniqueId();
         ChargingData charging = activeCharges.get(pid);
-        
+
         if (charging == null) return;
-        
+
         // Проверка валидности
         if (!player.isOnline() || player.isDead()) {
             stopCharging(player, true);
             return;
         }
-        
+
         // Проверка оружия в руке
         ItemStack weapon = player.getInventory().getItemInMainHand();
         if (weapon == null || weapon.getType() == Material.AIR || getIceshtormLevel(weapon) <= 0) {
@@ -433,165 +458,228 @@ public class IceshtormListener implements Listener {
             player.sendMessage(ChatColor.RED + "Зарядка прервана - оружие убрано");
             return;
         }
-        
-        // Тик времени зарядки
-        
+
         charging.ticks++;
 
-        // 1) На самом первом тике:
-        //  - накладываем базовый эффект замерзания на цели
-        //  - создаём блоки льда над игроком
-        //  - сразу запускаем их полёт к целям (как снаряды)
+        // 1) На первом тике: применяем мороз и начальные звуки
         if (charging.ticks == 1) {
             applyFreezeEffect(charging);
-
-            List<LivingEntity> targets = charging.getTargets();
-            if (!targets.isEmpty()) {
-                // Спавним несколько блоков льда над головой
-                for (int i = 0; i < 5; i++) {
-                    spawnIceBlockAbove(player, charging);
-                }
-
-                // Сразу запускаем полёт льда к целям, чтобы он длился всю зарядку
-                launchIceBlocks(player, charging, targets);
-            }
+            applySlowdownToTargets(charging);
+            try {
+                player.getWorld().playSound(player.getLocation(), Sound.BLOCK_POWDER_SNOW_PLACE, 1.2f, 0.8f);
+                player.getWorld().playSound(player.getLocation(), Sound.BLOCK_GLASS_STEP, 1.0f, 1.5f);
+            } catch (Throwable ignored) {}
         }
 
-        // 2) Через 20 тиков усиливаем заморозку: паралич и слабость
+        // 2) Через 20 тиков усиливаем заморозку
         if (charging.ticks == 20) {
             applyParalysisEffect(charging);
         }
 
-// Каждую секунду (20 тиков) снимаем 10 опыта и добавляем 1 энергию
+        // 3) Каждую секунду (20 тиков) снимаем 10 опыта и добавляем 1 энергию
         if (charging.ticks % 20 == 0) {
             if (player.getLevel() < 10) {
                 stopCharging(player, true);
                 player.sendMessage(ChatColor.RED + "Недостаточно опыта для продолжения зарядки");
                 return;
             }
-            
+
             player.giveExp(-10);
             charging.energy++;
-            
+
+            // Восходящий кристальный звон при наборе энергии
+            try {
+                float pitch = 0.65f + (charging.energy * 0.16f);
+                player.getWorld().playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1.2f, pitch);
+                player.getWorld().playSound(player.getLocation(), Sound.BLOCK_POWDER_SNOW_STEP, 1.0f, 0.85f);
+                player.getWorld().playSound(player.getLocation(), Sound.ITEM_ARMOR_EQUIP_DIAMOND, 0.6f, 1.4f);
+            } catch (Throwable ignored) {}
+
             plugin.debug("[Iceshtorm] Energy tick: " + charging.energy + "/" + charging.requiredEnergy);
         }
-        
-        // Визуальные эффекты каждый тик (белые партиклы вокруг игрока)
-        spawnChargingParticles(player, charging);
-        
-        // На 40-м тике - белые партиклы на целях
-        if (charging.ticks == 40) {
-            spawnTargetIndicators(charging);
-        }
-        
+
+        // 4) Восходящая метель (двойная спираль) + морозная мандала на земле
+        spawnChargingBlizzard(player, charging);
+
+        // 5) Вращающиеся кристаллы синего льда вокруг кастера
+        updateOrbitingIceBlocks(player, charging);
+
+        // 6) Морозные индикаторы над целями
+        updateTargetIndicators(charging);
+
         // Обновление прогресс-бара
         double progress = Math.min(1.0, (double) charging.energy / (double) charging.requiredEnergy);
         String barText = ChatColor.AQUA + "Ледяной шторм: " + ChatColor.GREEN + charging.energy 
                 + ChatColor.GRAY + "/" + ChatColor.GREEN + charging.requiredEnergy;
         updateBossBar(player, barText, progress);
         sendActionBar(player, barText);
-        
-        // Проверка завершения зарядки: один раз кастуем шторм и останавливаемся
+
+        // Завершение зарядки: удар ледяного шторма
         if (charging.energy >= charging.requiredEnergy) {
             castIceshtorm(player, charging);
             return;
         }
-
     }
 
-    private void spawnChargingParticles(Player player, ChargingData charging) {
-        Location center = player.getLocation().add(0, 2.5, 0);
+    /**
+     * Восходящая двойная спираль метели и ледяная мандала под ногами кастера.
+     */
+    private void spawnChargingBlizzard(Player player, ChargingData charging) {
+        Location pLoc = player.getLocation();
         World world = player.getWorld();
-        
-        // Растущее кольцо из снежных партиклов (начинаем с малого количества)
-        double radius = 0.3 + (charging.ticks / 120.0) * 1.2; // От 0.3 до 1.5 (медленнее рост)
-        int basePoints = 8; // Начальное количество точек
-        int maxPoints = 24; // Максимальное количество точек
-        int points = basePoints + (int)((charging.ticks / 100.0) * (maxPoints - basePoints));
-        
-        // Показываем партиклы только каждые 2 тика для уменьшения нагрузки
-        if (charging.ticks % 2 == 0) {
-            for (int i = 0; i < points; i++) {
-                double angle = 2 * Math.PI * i / points;
-                double x = center.getX() + Math.cos(angle) * radius;
-                double z = center.getZ() + Math.sin(angle) * radius;
-                
+
+        double vortexRadius = 1.35;
+        double progressRatio = Math.min(1.0, (double) charging.energy / Math.max(1, charging.requiredEnergy));
+
+        // Спираль 1 (снежные хлопья)
+        double h1 = ((charging.ticks * 2) % 50) / 50.0 * 2.5;
+        double a1 = charging.ticks * 0.22 + h1 * 2.2;
+        double x1 = pLoc.getX() + Math.cos(a1) * (vortexRadius * (1.0 - h1 * 0.12));
+        double z1 = pLoc.getZ() + Math.sin(a1) * (vortexRadius * (1.0 - h1 * 0.12));
+        try {
+            world.spawnParticle(Particle.SNOWFLAKE, x1, pLoc.getY() + h1, z1, 1, 0, 0, 0, 0.005);
+        } catch (Throwable ignored) {}
+
+        // Спираль 2 (ледяная лазурная пыль)
+        double h2 = (((charging.ticks * 2) + 25) % 50) / 50.0 * 2.5;
+        double a2 = a1 + Math.PI;
+        double x2 = pLoc.getX() + Math.cos(a2) * (vortexRadius * (1.0 - h2 * 0.12));
+        double z2 = pLoc.getZ() + Math.sin(a2) * (vortexRadius * (1.0 - h2 * 0.12));
+        try {
+            world.spawnParticle(Particle.DUST, x2, pLoc.getY() + h2, z2, 1, 0, 0, 0, 0, DUST_CYAN);
+        } catch (Throwable ignored) {}
+
+        // Ледяная мандала на земле каждые 3 тика
+        if (charging.ticks % 3 == 0) {
+            double rRune = 1.8 + progressRatio * 0.4;
+            int points = 12;
+            double groundY = pLoc.getY() + 0.06;
+            for (int p = 0; p < points; p++) {
+                double rAngle = (2 * Math.PI * p / points) + (charging.ticks * 0.06);
+                double rx = pLoc.getX() + Math.cos(rAngle) * rRune;
+                double rz = pLoc.getZ() + Math.sin(rAngle) * rRune;
                 try {
-                    // Меньше партиклов за раз
-                    world.spawnParticle(Particle.SNOWFLAKE, x, center.getY(), z, 1, 0, 0, 0, 0);
-                    
-                    // Облачко только на поздних стадиях зарядки
-                    if (charging.ticks > 40) {
-                        world.spawnParticle(Particle.CLOUD, x, center.getY(), z, 1, 0.02, 0.02, 0.02, 0);
-                    }
+                    world.spawnParticle(Particle.SNOWFLAKE, rx, groundY, rz, 1, 0, 0, 0, 0.002);
                 } catch (Throwable ignored) {}
             }
         }
-        
-        // Дополнительный снег вокруг игрока - реже и меньше
-        if (charging.ticks % 10 == 0) {
+
+        // Окружающий лёгкий морозный туман
+        if (charging.ticks % 6 == 0) {
             try {
-                world.spawnParticle(Particle.SNOWFLAKE, player.getLocation().add(0, 1, 0), 3, 0.3, 0.3, 0.3, 0.01);
+                world.spawnParticle(Particle.SNOWFLAKE, pLoc.clone().add(0, 1.2, 0), 4, 0.6, 0.6, 0.6, 0.02);
+                if (charging.ticks > 30) {
+                    world.spawnParticle(Particle.CLOUD, pLoc.clone().add(0, 0.2, 0), 2, 0.4, 0.1, 0.4, 0.01);
+                }
             } catch (Throwable ignored) {}
         }
     }
 
-    private void spawnTargetIndicators(ChargingData charging) {
+    /**
+     * Плавное вращение кристаллов синего льда вокруг кастера.
+     * Количество и скорость вращения растут вместе с накоплением энергии.
+     */
+    private void updateOrbitingIceBlocks(Player player, ChargingData charging) {
+        World world = player.getWorld();
+        Location center = player.getLocation().add(0, 1.2, 0);
+
+        // Количество орбит масштабируется с энергией (от 1 до 5)
+        int desiredOrbs = Math.min(5, Math.max(1, charging.energy + 1));
+
+        while (charging.spawnedIceBlocks.size() < desiredOrbs) {
+            try {
+                BlockData blueIce = Material.BLUE_ICE.createBlockData();
+                FallingBlock fb = world.spawnFallingBlock(center, blueIce);
+                fb.setDropItem(false);
+                fb.setGravity(false);
+                fb.setHurtEntities(false);
+                fb.setVelocity(new Vector(0, 0, 0));
+                charging.spawnedIceBlocks.add(fb);
+
+                world.playSound(center, Sound.BLOCK_GLASS_PLACE, 0.9f, 1.6f);
+                world.spawnParticle(Particle.FLASH, center, 1, 0, 0, 0, 0);
+            } catch (Throwable ignored) {
+                break;
+            }
+        }
+
+        int count = charging.spawnedIceBlocks.size();
+        if (count == 0) return;
+
+        double speedMultiplier = 1.0 + (charging.energy * 0.35);
+        double baseAngle = charging.ticks * 0.12 * speedMultiplier;
+        double orbitRadius = 1.55 + 0.12 * Math.sin(charging.ticks * 0.2);
+
+        for (int i = 0; i < count; i++) {
+            FallingBlock fb = charging.spawnedIceBlocks.get(i);
+            if (!fb.isValid() || fb.isDead()) {
+                try {
+                    fb = world.spawnFallingBlock(center, Material.BLUE_ICE.createBlockData());
+                    fb.setDropItem(false);
+                    fb.setGravity(false);
+                    fb.setHurtEntities(false);
+                    charging.spawnedIceBlocks.set(i, fb);
+                } catch (Throwable ignored) {
+                    continue;
+                }
+            }
+
+            double angle = baseAngle + (i * 2 * Math.PI / count);
+            double targetX = player.getLocation().getX() + Math.cos(angle) * orbitRadius;
+            double targetZ = player.getLocation().getZ() + Math.sin(angle) * orbitRadius;
+            double targetY = player.getLocation().getY() + 1.25 + 0.25 * Math.sin(charging.ticks * 0.18 + i);
+            Location targetLoc = new Location(world, targetX, targetY, targetZ);
+
+            try {
+                fb.teleport(targetLoc);
+                fb.setVelocity(new Vector(0, 0, 0));
+            } catch (Throwable ignored) {}
+
+            try {
+                world.spawnParticle(Particle.DUST, targetLoc.clone().add(0, 0.4, 0), 2, 0.1, 0.1, 0.1, 0, DUST_CYAN);
+                world.spawnParticle(Particle.END_ROD, targetLoc.clone().add(0, 0.4, 0), 1, 0.05, 0.05, 0.05, 0.01);
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    /**
+     * Морозные индикаторы над целями: кольцо инея под ногами и сияние над головой.
+     */
+    private void updateTargetIndicators(ChargingData charging) {
+        if (charging.ticks % 4 != 0) return;
+
         for (LivingEntity target : charging.getTargets()) {
             if (!target.isValid() || target.isDead()) continue;
-            
-            Location loc = target.getLocation().add(0, target.getHeight() + 0.5, 0);
-            try {
-                target.getWorld().spawnParticle(Particle.END_ROD, loc, 20, 0.3, 0.3, 0.3, 0.05);
-            } catch (Throwable ignored) {}
-        }
-    }
+            Location loc = target.getLocation();
+            World world = target.getWorld();
 
-    private void spawnIceBlockAbove(Player player, ChargingData charging) {
-        // Ограничиваем максимальное количество блоков льда до 4-5
-        if (charging.iceBlocksSpawned >= 5) {
-            return;
-        }
-        
-        Location spawnLoc = player.getLocation().add(0, 3 + (charging.iceBlocksSpawned * 0.4), 0);
-        World world = player.getWorld();
-        
-        try {
-            BlockData blueIce = Material.BLUE_ICE.createBlockData();
-            FallingBlock fb = world.spawnFallingBlock(spawnLoc, blueIce);
-            fb.setDropItem(false);
-            fb.setGravity(false);
-            fb.setVelocity(new Vector(0, 0, 0));
-            
-            charging.iceBlocksSpawned++;
-            charging.spawnedIceBlocks.add(fb);
-            
-            plugin.debug("[Iceshtorm] Spawned ice block #" + charging.iceBlocksSpawned);
-        } catch (Throwable ex) {
-            plugin.debug("[Iceshtorm] Failed to spawn ice block: " + ex.getMessage());
+            try {
+                world.spawnParticle(Particle.SNOWFLAKE, loc.clone().add(0, 0.1, 0), 5, 0.35, 0.05, 0.35, 0.01);
+                world.spawnParticle(Particle.END_ROD, loc.clone().add(0, target.getHeight() + 0.5, 0), 2, 0.15, 0.15, 0.15, 0.02);
+            } catch (Throwable ignored) {}
+
+            try {
+                target.setFreezeTicks(Math.max(target.getFreezeTicks(), 140));
+            } catch (Throwable ignored) {}
         }
     }
 
     private void applySlowdownToTargets(ChargingData charging) {
         for (LivingEntity target : charging.getTargets()) {
             if (!target.isValid() || target.isDead()) continue;
-            
-            // Максимальное замедление
+
             try {
                 target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 999999, 255, false, false, false));
-                target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 999999, 250, false, false, false)); // Не дает прыгать
+                target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 999999, 250, false, false, false));
             } catch (Throwable ignored) {}
         }
     }
 
-
-    // Базовый эффект замерзания: замедление и "холод"
     private void applyFreezeEffect(ChargingData charging) {
         List<LivingEntity> targets = charging.getTargets();
         for (LivingEntity target : targets) {
             if (!target.isValid() || target.isDead()) continue;
             try {
-                // Лёгкое замедление на длительное время
                 target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 200, 0, false, false, true));
                 try {
                     target.setFreezeTicks(Math.max(target.getFreezeTicks(), target.getMaxFreezeTicks() / 2));
@@ -599,113 +687,232 @@ public class IceshtormListener implements Listener {
             } catch (Throwable ignored) {}
         }
     }
-    
-    // Усиленный эффект: паралич (очень сильное замедление, запрет прыжка) и слабость
+
     private void applyParalysisEffect(ChargingData charging) {
         List<LivingEntity> targets = charging.getTargets();
         for (LivingEntity target : targets) {
             if (!target.isValid() || target.isDead()) continue;
             try {
-                // Очень сильное замедление
                 target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 160, 4, false, false, true));
-                // Запрет прыжка
                 target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 160, 250, false, false, true));
-                // Слабость для уменьшения урона с их стороны
                 target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 160, 1, false, false, true));
             } catch (Throwable ignored) {}
         }
     }
 
-    
+    /**
+     * Кульминация каста: мощная морозная вспышка и запуск кристаллов в цели.
+     */
     private void castIceshtorm(Player player, ChargingData charging) {
         plugin.debug("[Iceshtorm] CASTING storm for " + player.getName());
 
         List<LivingEntity> targets = charging.getTargets();
+        Location fallbackLoc = player.getLocation().add(player.getLocation().getDirection().multiply(8.0));
 
-        if (targets.isEmpty()) {
-            stopCharging(player, false);
-            player.sendMessage(ChatColor.RED + "Нет целей в радиусе действия");
-            return;
-        }
+        Location pLoc = player.getLocation().add(0, 1.2, 0);
+        World world = player.getWorld();
 
-        // Дополнительно даём краткую слепоту всем целям перед финальным ударом
+        // 1. Мощная ударная волна холода от кастера
+        try {
+            world.spawnParticle(Particle.FLASH, pLoc, 2, 0, 0, 0, 0);
+            world.spawnParticle(Particle.SONIC_BOOM, pLoc, 1, 0, 0, 0, 0);
+            for (int i = 0; i < 36; i++) {
+                double a = 2 * Math.PI * i / 36;
+                double vx = Math.cos(a) * 0.65;
+                double vz = Math.sin(a) * 0.65;
+                world.spawnParticle(Particle.SNOWFLAKE, pLoc, 0, vx, 0.05, vz, 0.4);
+            }
+            world.playSound(pLoc, Sound.ENTITY_EVOKER_CAST_SPELL, 1.3f, 0.85f);
+            world.playSound(pLoc, Sound.ITEM_TRIDENT_THUNDER, 1.3f, 1.25f);
+            world.playSound(pLoc, Sound.ENTITY_PLAYER_HURT_FREEZE, 1.6f, 0.5f);
+        } catch (Throwable ignored) {}
+
+        // 2. Краткая слепота на цели (если есть)
         for (LivingEntity target : targets) {
             if (!target.isValid() || target.isDead()) continue;
-
             try {
                 target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0, false, true, true));
             } catch (Throwable ignored) {}
         }
 
-        // На этом этапе ледяные блоки уже летят к целям.
-        // Здесь мы только регистрируем состояние шторма, чтобы после
-        // завершения полёта льда по тем же целям ударила молния.
-        stormStates.put(player.getUniqueId(), new StormLightningState(player.getUniqueId(), targets));
+        // 3. Запуск ледяных кристаллов в цели или в направлении взгляда
+        launchIceBlocks(player, charging, targets);
 
-        // Устанавливаем время последнего каста и останавливаем зарядку
+        // 4. Регистрация состояния шторма для последующего громового финала
+        stormStates.put(player.getUniqueId(), new StormLightningState(player.getUniqueId(), targets, fallbackLoc));
+
         lastCastTime.put(player.getUniqueId(), System.currentTimeMillis());
         stopCharging(player, false);
     }
 
+    public void castDirectly(Player player, int energy) {
+        CustomEnchant enchant = enchantManager.getEnchant(ENCHANT_ID);
+        int level = 1;
+        ItemStack weapon = player.getInventory().getItemInMainHand();
+        int itemLvl = getIceshtormLevel(weapon);
+        if (itemLvl > 0) level = itemLvl;
+        EnchantLevel data = enchant != null ? enchant.getLevel(level) : null;
 
-    private void launchIceBlocks(Player caster, ChargingData charging, List<LivingEntity> targets) {
-        for (FallingBlock fb : charging.spawnedIceBlocks) {
-            if (!fb.isValid()) continue;
-            
-            // Выбираем случайную цель
-            LivingEntity target = targets.get(new Random().nextInt(targets.size()));
-            
-            Vector dir = target.getLocation().toVector()
-                    .subtract(fb.getLocation().toVector())
-                    .normalize()
-                    .multiply(0.35); // чуть медленнее, чтобы было видно полет
-            
-            try {
-                // Ледяные блоки летят по воздуху без падения
-                fb.setGravity(false);
-                fb.setVelocity(dir);
-                
-                // Регистрируем блок для анимации и урона
-                IceBlockData data = new IceBlockData(caster, targets, dir);
-                iceBlocks.put(fb.getUniqueId(), data);
-                
-                plugin.debug("[Iceshtorm] Launched ice block to " + target.getName());
-            } catch (Throwable ignored) {}
-        }
-
+        ChargingData charging = new ChargingData(player, level, data, 5, 12.0);
+        charging.energy = Math.max(1, Math.min(5, energy));
+        castIceshtorm(player, charging);
     }
 
-    private void strikeTargetsWithLightning(Player caster, List<LivingEntity> targets) {
+    public void startChargingDirectly(Player player, int seconds) {
+        CustomEnchant enchant = enchantManager.getEnchant(ENCHANT_ID);
+        int level = 1;
+        ItemStack weapon = player.getInventory().getItemInMainHand();
+        int itemLvl = getIceshtormLevel(weapon);
+        if (itemLvl > 0) level = itemLvl;
+        EnchantLevel data = enchant != null ? enchant.getLevel(level) : null;
+
+        int req = Math.max(1, Math.min(5, seconds));
+        ChargingData charging = new ChargingData(player, level, data, req, 12.0);
+        charging.directTest = true;
+        activeCharges.put(player.getUniqueId(), charging);
+        applySlowdownToTargets(charging);
+
+        int taskId = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            tickCharging(player);
+        }, 0L, 1L).getTaskId();
+        charging.taskId = taskId;
+    }
+
+    /**
+     * Запуск летящих ледяных кристаллов в цели с высокой скоростью.
+     */
+    private void launchIceBlocks(Player caster, ChargingData charging, List<LivingEntity> targets) {
+        List<FallingBlock> blocks = new ArrayList<>(charging.spawnedIceBlocks);
+        charging.spawnedIceBlocks.clear(); // Очищаем список орбит, чтобы stopCharging их не удалил
+
+        if (blocks.isEmpty()) {
+            int toSpawn = Math.max(1, Math.min(5, charging.energy > 0 ? charging.energy : 3));
+            for (int i = 0; i < toSpawn; i++) {
+                double a = 2 * Math.PI * i / toSpawn;
+                Location spawnLoc = caster.getLocation().add(Math.cos(a) * 1.5, 1.5, Math.sin(a) * 1.5);
+                try {
+                    FallingBlock fb = caster.getWorld().spawnFallingBlock(spawnLoc, Material.BLUE_ICE.createBlockData());
+                    fb.setDropItem(false);
+                    fb.setHurtEntities(false);
+                    fb.setGravity(false);
+                    blocks.add(fb);
+                } catch (Throwable ignored) {}
+            }
+        }
+
+        for (FallingBlock fb : blocks) {
+            if (!fb.isValid() || fb.isDead()) continue;
+
+            Vector dir;
+            if (targets != null && !targets.isEmpty()) {
+                LivingEntity target = targets.get(new Random().nextInt(targets.size()));
+                Vector targetVec = target.getLocation().add(0, target.getHeight() * 0.5, 0).toVector();
+                Vector fbVec = fb.getLocation().toVector();
+                dir = targetVec.subtract(fbVec);
+            } else {
+                Vector look = caster.getLocation().getDirection();
+                double spreadX = (Math.random() - 0.5) * 0.25;
+                double spreadY = (Math.random() - 0.5) * 0.15;
+                double spreadZ = (Math.random() - 0.5) * 0.25;
+                dir = look.clone().add(new Vector(spreadX, spreadY, spreadZ));
+            }
+
+            if (dir.lengthSquared() > 0.001) {
+                dir.normalize().multiply(0.85); // Быстрый и ощутимый полёт
+            } else {
+                dir = new Vector(0, 0.5, 0);
+            }
+
+            try {
+                fb.setGravity(false);
+                fb.setVelocity(dir);
+
+                IceBlockData data = new IceBlockData(caster, targets, dir);
+                iceBlocks.put(fb.getUniqueId(), data);
+
+                fb.getWorld().playSound(fb.getLocation(), Sound.ENTITY_WIND_CHARGE_WIND_BURST, 1.0f, 1.3f);
+                fb.getWorld().playSound(fb.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 0.7f);
+
+                plugin.debug("[Iceshtorm] Launched ice block from " + caster.getName());
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    /**
+     * Финальный ледяной громовой удар: небесный луч и морозный взрыв.
+     */
+    private void strikeTargetsWithLightning(Player caster, List<LivingEntity> targets, Location fallbackLoc) {
+        if (targets == null || targets.isEmpty()) {
+            if (fallbackLoc != null && fallbackLoc.getWorld() != null) {
+                playCelestialLightningAt(caster, fallbackLoc, null);
+            }
+            return;
+        }
         for (LivingEntity target : targets) {
             if (!target.isValid() || target.isDead()) continue;
-            
-            Location loc = target.getLocation();
-            
-            // Усиленная молния = реальная молния + урон
-            try {
-                target.getWorld().strikeLightning(loc);
-            } catch (Throwable ignored) {
-                target.getWorld().strikeLightningEffect(loc);
+            playCelestialLightningAt(caster, target.getLocation(), target);
+        }
+    }
+
+    private void playCelestialLightningAt(Player caster, Location loc, LivingEntity target) {
+        World w = loc.getWorld();
+        if (w == null) return;
+
+        // 1. Реальная молния
+        try {
+            w.strikeLightning(loc);
+        } catch (Throwable ignored) {
+            w.strikeLightningEffect(loc);
+        }
+
+        // 2. Небесный ледяной луч, нисходящий из облаков
+        try {
+            double baseY = loc.getY();
+            for (double y = baseY; y <= baseY + 20; y += 1.2) {
+                Location beamLoc = new Location(w, loc.getX(), y, loc.getZ());
+                w.spawnParticle(Particle.END_ROD, beamLoc, 2, 0.2, 0.1, 0.2, 0.02);
+                w.spawnParticle(Particle.DUST, beamLoc, 3, 0.25, 0.1, 0.25, 0, DUST_CYAN);
             }
-            
-            // Дополнительный урон (25% от макс. хп, минимум 2)
+        } catch (Throwable ignored) {}
+
+        // 3. Ударная волна по земле
+        try {
+            w.spawnParticle(Particle.SONIC_BOOM, loc.clone().add(0, 0.2, 0), 1, 0, 0, 0, 0);
+            for (int i = 0; i < 28; i++) {
+                double a = 2 * Math.PI * i / 28;
+                double vx = Math.cos(a) * 0.55;
+                double vz = Math.sin(a) * 0.55;
+                w.spawnParticle(Particle.SNOWFLAKE, loc.clone().add(0, 0.2, 0), 0, vx, 0.1, vz, 0.35);
+            }
+            BlockData blueIce = Material.BLUE_ICE.createBlockData();
+            w.spawnParticle(Particle.BLOCK, loc.clone().add(0, 0.5, 0), 45, 0.5, 0.5, 0.5, 0.12, blueIce);
+        } catch (Throwable ignored) {}
+
+        // 4. Многослойный звуковой дизайн (гром + ледяной хруст + резонанс)
+        try {
+            w.playSound(loc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 0.85f);
+            w.playSound(loc, Sound.BLOCK_GLASS_BREAK, 1.8f, 0.6f);
+            w.playSound(loc, Sound.BLOCK_CONDUIT_DEACTIVATE, 1.5f, 0.75f);
+        } catch (Throwable ignored) {}
+
+        // 5. Урон и глубокая заморозка
+        if (target != null && target.isValid() && !target.isDead()) {
             double maxHp = target.getMaxHealth();
             double damage = Math.max(2.0, maxHp * 0.25);
-            
+
             try {
-                target.damage(damage, caster);
+                if (caster != null) target.damage(damage, caster);
+                else target.damage(damage);
             } catch (Throwable ignored) {
                 target.damage(damage);
             }
-            
-            // Эффект заморозки продолжается
+
             try {
                 target.setFreezeTicks(target.getMaxFreezeTicks());
             } catch (Throwable ignored) {}
-            
+
             plugin.debug("[Iceshtorm] Lightning struck " + target.getName() + " for " + damage + " damage");
         }
-
     }
 
     
@@ -848,6 +1055,7 @@ public class IceshtormListener implements Listener {
         int taskId = -1;
         int iceBlocksSpawned = 0;
         long startTime = 0; // Время начала зарядки
+        boolean directTest = false;
         
         List<FallingBlock> spawnedIceBlocks = new ArrayList<>();
         List<LivingEntity> cachedTargets = null;
@@ -884,11 +1092,13 @@ public class IceshtormListener implements Listener {
     private static class StormLightningState {
         UUID casterId;
         List<LivingEntity> targets;
+        Location fallbackLoc;
         int idleTicks;
 
-        StormLightningState(UUID casterId, List<LivingEntity> targets) {
+        StormLightningState(UUID casterId, List<LivingEntity> targets, Location fallbackLoc) {
             this.casterId = casterId;
-            this.targets = new ArrayList<>(targets);
+            this.targets = targets != null ? new ArrayList<>(targets) : new ArrayList<>();
+            this.fallbackLoc = fallbackLoc;
             this.idleTicks = 0;
         }
     }

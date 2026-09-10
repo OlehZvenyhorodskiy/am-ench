@@ -173,6 +173,142 @@ if (args[0].equalsIgnoreCase("giveitem")) {
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("enchant")) {
+            if (args.length < 3) {
+                sender.sendMessage(ChatColor.RED + "Использование: /" + label + " enchant <enchant> <level> [player]");
+                return true;
+            }
+
+            String enchantId = args[1].toLowerCase();
+            int level;
+            try {
+                level = Integer.parseInt(args[2]);
+            } catch (NumberFormatException ex) {
+                sender.sendMessage(ChatColor.RED + "Уровень должен быть числом.");
+                return true;
+            }
+
+            Player target;
+            if (args.length >= 4) {
+                target = Bukkit.getPlayerExact(args[3]);
+            } else if (sender instanceof Player) {
+                target = (Player) sender;
+            } else {
+                sender.sendMessage(ChatColor.RED + "Укажите игрока.");
+                return true;
+            }
+
+            if (target == null) {
+                sender.sendMessage(ChatColor.RED + "Игрок не найден.");
+                return true;
+            }
+
+            ItemStack inHand = target.getInventory().getItemInMainHand();
+            if (inHand == null || inHand.getType().isAir()) {
+                sender.sendMessage(ChatColor.RED + "В руке нет предмета.");
+                return true;
+            }
+
+            CustomEnchant enchant = enchantManager.getEnchant(enchantId);
+            if (enchant == null) {
+                sender.sendMessage(ChatColor.RED + "Зачарование не найдено: " + enchantId);
+                return true;
+            }
+
+            if (enchant.getLevel(level) == null) {
+                sender.sendMessage(ChatColor.RED + "Уровень " + level + " не определён для зачарования " + enchantId);
+                return true;
+            }
+
+            Map<CustomEnchant, Integer> current = new java.util.HashMap<>(enchantManager.getEnchantmentsOnItem(inHand));
+            current.put(enchant, level);
+            enchantManager.setEnchantmentsOnItem(inHand, current);
+            sender.sendMessage(ChatColor.GREEN + "Предмет в руке зачарован на " + enchant.getDisplayName() + " " + level + " (" + target.getName() + ")");
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("cast")) {
+            if (args.length < 2) {
+                sender.sendMessage(ChatColor.RED + "Использование: /" + label + " cast <enchant> [energy] [player]");
+                return true;
+            }
+
+            String enchantId = args[1].toLowerCase();
+            int energy = 5;
+            if (args.length >= 3) {
+                try {
+                    energy = Integer.parseInt(args[2]);
+                } catch (NumberFormatException ignored) {}
+            }
+
+            Player target;
+            if (args.length >= 4) {
+                target = Bukkit.getPlayerExact(args[3]);
+            } else if (sender instanceof Player) {
+                target = (Player) sender;
+            } else {
+                sender.sendMessage(ChatColor.RED + "Укажите игрока.");
+                return true;
+            }
+
+            if (target == null) {
+                sender.sendMessage(ChatColor.RED + "Игрок не найден.");
+                return true;
+            }
+
+            if ("iceshtorm".equalsIgnoreCase(enchantId)) {
+                if (plugin.getIceshtormListener() != null) {
+                    plugin.getIceshtormListener().castDirectly(target, energy);
+                    sender.sendMessage(ChatColor.AQUA + "Ледяной шторм активирован для " + target.getName() + " с мощностью " + energy);
+                    return true;
+                }
+            }
+
+            sender.sendMessage(ChatColor.RED + "Каст для зачарования " + enchantId + " не поддерживается.");
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("charge")) {
+            if (args.length < 2) {
+                sender.sendMessage(ChatColor.RED + "Использование: /" + label + " charge <enchant> [seconds] [player]");
+                return true;
+            }
+
+            String enchantId = args[1].toLowerCase();
+            int seconds = 3;
+            if (args.length >= 3) {
+                try {
+                    seconds = Integer.parseInt(args[2]);
+                } catch (NumberFormatException ignored) {}
+            }
+
+            Player target;
+            if (args.length >= 4) {
+                target = Bukkit.getPlayerExact(args[3]);
+            } else if (sender instanceof Player) {
+                target = (Player) sender;
+            } else {
+                sender.sendMessage(ChatColor.RED + "Укажите игрока.");
+                return true;
+            }
+
+            if (target == null) {
+                sender.sendMessage(ChatColor.RED + "Игрок не найден.");
+                return true;
+            }
+
+            if ("iceshtorm".equalsIgnoreCase(enchantId)) {
+                if (plugin.getIceshtormListener() != null) {
+                    plugin.getIceshtormListener().startChargingDirectly(target, seconds);
+                    sender.sendMessage(ChatColor.AQUA + "Зарядка ледяного шторма запущена для " + target.getName() + " на " + seconds + " сек");
+                    return true;
+                }
+            }
+
+            sender.sendMessage(ChatColor.RED + "Зарядка для зачарования " + enchantId + " не поддерживается.");
+            return true;
+        }
+
         sender.sendMessage(ChatColor.RED + "Неизвестная подкоманда. Используйте /" + label + " help");
         return true;
     }

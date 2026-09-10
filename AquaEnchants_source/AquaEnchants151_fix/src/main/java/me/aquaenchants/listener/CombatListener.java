@@ -5,8 +5,12 @@ import me.aquaenchants.enchant.CustomEnchant;
 import me.aquaenchants.enchant.EnchantLevel;
 import me.aquaenchants.enchant.EnchantManager;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -384,13 +388,15 @@ if (permafrost != null && permafrostLevel > 0) {
 
                             // Звук взрыва
                             try {
-                                world.playSound(loc, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.0f);
+                                world.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.2f, 0.9f);
+                                world.playSound(loc, Sound.ENTITY_WIND_CHARGE_WIND_BURST, 1.0f, 1.2f);
                             } catch (Throwable ignored) {
                             }
 
                             // Частицы взрыва
                             try {
-                                world.spawnParticle(org.bukkit.Particle.EXPLOSION, loc, 1, 0.0, 0.0, 0.0, 0.0);
+                                world.spawnParticle(Particle.EXPLOSION_EMITTER, loc, 1, 0.0, 0.0, 0.0, 0.0);
+                                world.spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, loc.clone().add(0, 0.3, 0), 12, 0.35, 0.25, 0.35, 0.04);
                             } catch (Throwable ignored) {
                             }
 
@@ -474,8 +480,12 @@ if (permafrost != null && permafrostLevel > 0) {
                     Bukkit.getScheduler().runTaskLater(plugin, () -> {
                         if (!target.isValid() || target.isDead()) return;
                         try {
-                            // Показываем визуальный эффект молнии, который не создаёт сущность.
-                            target.getWorld().strikeLightningEffect(target.getLocation());
+                            Location tLoc = target.getLocation();
+                            World tw = target.getWorld();
+                            tw.strikeLightningEffect(tLoc);
+                            tw.spawnParticle(Particle.ELECTRIC_SPARK, tLoc.clone().add(0, 1.0, 0), 25, 0.4, 0.5, 0.4, 0.15);
+                            tw.spawnParticle(Particle.FLASH, tLoc.clone().add(0, 1.5, 0), 1, 0, 0, 0, 0);
+                            tw.playSound(tLoc, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.2f, 1.1f);
                         } catch (Throwable ignored) {
                         }
 
@@ -705,20 +715,14 @@ if (permafrost != null && permafrostLevel > 0) {
 
     private void spawnBloodParticles(LivingEntity target) {
         try {
-            target.getWorld().spawnParticle(
-                    Particle.DAMAGE_INDICATOR,
-                    target.getLocation().add(0, 1.0, 0),
-                    10,
-                    0.5, 0.5, 0.5,
-                    0.1
-            );
-            target.getWorld().spawnParticle(
-                    Particle.HEART,
-                    target.getLocation().add(0, 1.2, 0),
-                    2,
-                    0.3, 0.3, 0.3,
-                    0.0
-            );
+            Location loc = target.getLocation().add(0, target.getHeight() * 0.5, 0);
+            World world = target.getWorld();
+            Particle.DustOptions bloodDust = new Particle.DustOptions(Color.fromRGB(180, 0, 0), 1.2f);
+            world.spawnParticle(Particle.DUST, loc, 25, 0.35, 0.35, 0.35, 0.08, bloodDust);
+            world.spawnParticle(Particle.BLOCK, loc, 15, 0.25, 0.25, 0.25, 0.05, Material.REDSTONE_BLOCK.createBlockData());
+            world.spawnParticle(Particle.DAMAGE_INDICATOR, loc, 8, 0.4, 0.4, 0.4, 0.1);
+            world.playSound(loc, Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.8f, 0.7f);
+            world.playSound(loc, Sound.ENTITY_PLAYER_HURT_SWEET_BERRY_BUSH, 0.7f, 0.9f);
         } catch (Throwable ignored) {
         }
     }

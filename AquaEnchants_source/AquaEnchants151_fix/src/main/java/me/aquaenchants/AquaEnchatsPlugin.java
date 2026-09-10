@@ -68,6 +68,7 @@ public class AquaEnchatsPlugin extends JavaPlugin {
     private IndikatorListener indikatorListener;
     private me.aquaenchants.gui.AdminChanceGUI adminChanceGUI;
     private me.aquaenchants.config.TableSettingsManager tableSettingsManager;
+    private IceshtormListener iceshtormListener;
 
     public CmiEnchantLimits getCmiEnchantLimits() {
         return cmiEnchantLimits;
@@ -79,6 +80,10 @@ public class AquaEnchatsPlugin extends JavaPlugin {
 
     public me.aquaenchants.config.TableSettingsManager getTableSettingsManager() {
         return tableSettingsManager;
+    }
+
+    public IceshtormListener getIceshtormListener() {
+        return iceshtormListener;
     }
 
 
@@ -170,7 +175,8 @@ public class AquaEnchatsPlugin extends JavaPlugin {
         this.indikatorListener = new IndikatorListener(this, enchantManager);
         Bukkit.getPluginManager().registerEvents(indikatorListener, this);
         Bukkit.getPluginManager().registerEvents(new SignalListener(this, enchantManager), this);
-        Bukkit.getPluginManager().registerEvents(new IceshtormListener(this, enchantManager), this);
+        this.iceshtormListener = new IceshtormListener(this, enchantManager);
+        Bukkit.getPluginManager().registerEvents(iceshtormListener, this);
         
         // Listeners that need cleanup
         this.timberEnergyListener = new TimberEnergyListener(this, enchantManager);
